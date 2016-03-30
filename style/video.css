@@ -1,0 +1,83 @@
+.ctm-v-box video::-webkit-media-controls-enclosure {
+  display:none !important;
+}
+.ctm-v-box{
+	position: relative;
+	width: 100%;
+}
+.ctm-v-box .ctm-ctrls {
+	width: 100%;
+	height: 40px;
+	position: absolute;
+	left: 0;
+	top: 100%;
+	z-index: 2147483648;
+	background: rgba(0, 0, 0, .8);
+	opacity: 0;
+}
+.ctm-v-box .ctm-ctrl {
+	float: left;
+	margin-top: 4px;
+}
+.ctm-v-box .ctm-playbtn{
+	width: 20px;
+	height: 20px;
+	color: #FFF;
+}
+
+.ctm-v-box .ctm-slider-bg{
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	background-color: #fff; 
+}
+.ctm-v-box .ctm-progressbar .ctm-sliderbar{
+	width: 80px;
+	height: 10px;
+	position: relative;
+	border: 1px solid #aaa;
+	border-radius: 4px;
+	background: #333;
+	display: inline-block;
+}
+.ctm-v-box .ctm-progressbar .ctm-slider{
+	width: 20px;
+	height: 16px;
+	position: absolute;
+	top: -2px;
+	left: 0;
+	background-color: #fff;
+	border-radius: 40%;
+}
+.ctm-v-box .ctm-progressbar .ctm-duration{
+	display: inline-block;
+	color: #fff;
+}
+.ctm-v-box .ctm-volumebar .ctm-volume-icon{
+	width: 10px;
+	height: 10px;
+	display: inline-block;
+	background: #fff;
+}
+.ctm-v-box .ctm-volumebar .ctm-sliderbar{
+	width: 80px;
+	height: 10px;
+	position: relative;
+	border: 1px solid #aaa;
+	border-radius: 4px;
+	background: #333;
+	display: inline-block;
+}
+.ctm-v-box .ctm-volumebar .ctm-slider{
+	width: 20px;
+	height: 16px;
+	position: absolute;
+	top: -2px;
+	background-color: #fff;
+	border-radius: 40%;
+}
+
+.ctm-v-box .ctm-screen {
+	color: #fff;
+}
