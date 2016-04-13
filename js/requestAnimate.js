@@ -1,4 +1,4 @@
-export default (function() {
+module.exports = (function() {
 	return window.requestAnimationFrame ||
 			window.webkitRequestAnimationFrame ||
 			window.mozRequestAnimationFrame ||

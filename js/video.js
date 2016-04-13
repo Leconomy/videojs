@@ -1,340 +1,521 @@
 'use strict'
 require('../style/video.css');
-import {formatTime} from './formatTime';
-import {requestAnimate} from './requestAnimate';
+require('./customElem');
+let formatTime = require('./formatTime');
+let requestAnimate = require('./requestAnimate');
 class Video {
-	constructor(wrapper, options) {
-		const self = this;
+    constructor(wrapper, options) {
+        const self = this;
 
-		this.wrapper = wrapper;
-		self.options = $.extend({
-	    	sources:[],
-	    	autoPlay: false
-	    },options);
-		self.video = null;
-		self.videoId = 'ctm-v-' + +new Date();
-		self.volume = 0.5;
-	    this.init();
-	}
+        this.wrapper = wrapper;
+        self.options = $.extend({
+            sources: [],
+            autoPlay: false
+        }, options);
+        self.video = null;
+        self.videoId = 'qhv-v-' + +new Date();
+        self.volume = 0.5;
+        self.touchemoved = false;
+        self.ctrlsHideTimer = null;
+        self.ctrlsHided = false;
+        this.init();
+    }
 
-	init() {
-		const self = this;
+    init() {
+            const self = this;
 
-		self.renderVideo();
-		
+            self.renderVideo();
+            self.listener();
 
-	}
-	/**
-	 * 渲染video标签
-	 * @return {[type]} [description]
-	 */
-	renderVideo() {
-		let self = this,
-			options = self.options,
-			source = '',
-			video = '',
-			autoPlay = options.autoPlay ? ' autoPlay' : '';
+        }
+        /**
+         * 渲染video标签
+         * @return {[type]} [description]
+         */
+    renderVideo() {
+        let self = this,
+            options = self.options,
+            source = '',
+            video = '',
+            timer = null,
+            autoPlay = options.autoPlay ? ' autoPlay' : '';
 
-		options.sources.forEach(function(v, i) {
-			source += `<source src="${v}"></source>`;
-		});
+        options.sources.forEach(function(v, i) {
+            source += `<source src="${v}"></source>`;
+        });
 
-		video = `<div class="ctm-v-box">
+        video = `<qhvdiv class="qhv-v-box">
 					<video width="100%" id="${self.videoId}">${source}您的浏览器不支持video标签</video>
-					<div class="ctm-ctrls">
-						<div class="ctm-ctrl ctm-playbtn">||</div>
-						<div class="ctm-ctrl ctm-progressbar">
-							<div class="ctm-sliderbar ctm-p-sliderbar">
-								<div class="ctm-slider-bg"></div>
-								<div class="ctm-slider ctm-p-slider"></div>
-							</div>
-							<div class="ctm-duration"></div>
-						</div>
-						<div class="ctm-ctrl ctm-volumebar">
-							<div class="ctm-volume-icon"></div>
-							<div class="ctm-sliderbar ctm-v-sliderbar">
-								<div class="ctm-slider-bg"></div>
-								<div class="ctm-slider ctm-v-slider"></div>
-							</div>
-						</div>
-						<div class="ctm-ctrl ctm-screen ctm-fullscreen">全屏</div>
-					</div>
-				</div>`;
+					<qhvdiv class="qhv-overlay">
+						<qhvdiv class="qhv-ctrls">
+							<qhvdiv class="qhv-ctrls-box">
+								<qhvdiv class="qhv-ctrl qhv-playpausebtn"></qhvdiv>
+								<qhvdiv class="qhv-ctrl qhv-progressbar">
+									<qhvdiv class="qhv-sliderbar qhv-p-sliderbar">
+										<qhvdiv class="qhv-slider-buffer"></qhvdiv>
+										<qhvdiv class="qhv-slider-bg"></qhvdiv>
+										<qhvdiv class="qhv-slider qhv-p-slider"></qhvdiv>
+									</qhvdiv>
+									<qhvdiv class="qhv-current-time">00:00</qhvdiv>
+									<qhvdiv class="qhv-sep">/</qhvdiv>
+									<qhvdiv class="qhv-duration">00:00</qhvdiv>
+								</qhvdiv>
+								<qhvdiv class="qhv-ctrl qhv-screen qhv-fullscreen">全屏</qhvdiv>
+							</qhvdiv>
+						</qhvdiv>
+						<qhvdiv class="qhv-overlay-btn">
+							<qhvdiv class="qhv-playpausebtn"></qhvdiv>	
+						</qhvdiv>
+						<qhvdiv class="qhv-volumebar">
+							<qhvdiv class="qhv-v-sliderbar">
+								<qhvdiv class="qhv-slider-bg"></qhvdiv>
+								<qhvdiv class="qhv-v-slider"></qhvdiv>
+							</qhvdiv>
+							<qhvdiv class="qhv-volume-icon"></qhvdiv>
+						</qhvdiv>
+					</qhvdiv>
+				</qhvdiv>`;
 
-		$(video).appendTo(self.wrapper);
+        $(video).appendTo(self.wrapper);
+        self.video = document.getElementById(self.videoId);
+        $(self.video).ready(function() {
+                self.renderControls();
+                self.video.volume = self.volume;
 
-		self.video = document.getElementById(self.videoId);
-		self.video.oncanplay = function() {
-			self.video.volume = self.volume;
-			self.renderControls();
-			
-		};
+                requestAnimate(self.buffer.bind(self));
+            })
+            self.video.addEventListener('loadstart', function() {
+            	$(self).trigger('waiting');
+            }, false);
+            self.video.addEventListener('waiting', function() {
+            	$(self).trigger('waiting');console.log('waiting');
+            }, false);
+            self.video.addEventListener('canplay', function() {
+            	self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-loading');
+            }, false);
+            // self.video.addEventListener('canplaythrough', type, false);
+            // self.video.addEventListener('playing', type, false);
+            self.video.addEventListener('ended', function() {
+            	$(self).trigger('ended');
+            	
+            }, false);
+            self.video.addEventListener('seeking', function() {
+            	$(self).trigger('waiting');
+            }, false);
+            self.video.addEventListener('seeked', function() {
 
-	}
-	/**
-	 * 渲染自定义控件
-	 * @return {[type]} [description]
-	 */
-	renderControls() {
-		const self = this;
-		if(self.options.autoPlay) {
-			self.video.play();
-		}
-		let $volumebar = self.wrapper.find('.ctm-volumebar .ctm-sliderbar'); 
-		self.updateSliderbar($volumebar, self.volume * $volumebar.width() - $volumebar.find('.ctm-slider').width() / 2);
-		self.wrapper.find('.ctm-ctrls').css('opacity', 1);
-		self.updatePlayTime(self.video.duration);
-		self.on();
-		self.addListener();
-	}
-	/**
-	 * 更新视频播放时长
-	 * @param  {Number} time 当前视频播放的时长
-	 * @return {[type]}      [description]
-	 */
-	updatePlayTime(time) {
-		const self = this;
-		self.wrapper.find('.ctm-duration').html(formatTime.format(time));
-	}
+            }, false);
+            self.video.addEventListener('play', function() {
+            	$(self).trigger('controlls.delayhide');
+            }, false);
+            // self.video.addEventListener('firstplay', type, false);
+            self.video.addEventListener('pause', function() {
+            	$(self).trigger('controlls.show');
+            	clearTimeout(self.ctrlsHideTimer);
+            }, false);
+            self.video.addEventListener('progress', function() {
+            	console.log('progress');
+            }, false);
+            // self.video.addEventListener('durationchange', type, false);
+            // self.video.addEventListener('fullscreenchange', type, false);
+            self.video.addEventListener('error', function() {
+            	console.log('error')
+            }, false);
+            self.video.addEventListener('suspend', function() {
+            	console.log('suspend')
+            	// $(self).trigger('waiting');
+            }, false);
+            self.video.addEventListener('abort', function() {
+            	console.log('abort');
+            }, false);
+            self.video.addEventListener('emptied', function() {
+            	console.log('emptied')
+            }, false);
+            self.video.addEventListener('stalled', function() {
+            	console.log('stalled')
+            	$(self).trigger('waiting');
+            }, false);
+            // self.video.addEventListener('loadedmetadata', type, false);
+            self.video.addEventListener('loadeddata', function() {
+            	console.log('loadeddata')
+            }, false);
+            // self.video.addEventListener('ratechange', type, false);
+            // self.video.addEventListener('volumechange', type, false);
+            // self.video.addEventListener('texttrackchange', type, false);
+            self.video.addEventListener('posterchange', function() {
+            	console.log('posterchange')
+            }, false);
+        self.video.addEventListener('loadedmetadata', function() {
+            let $volumebar = self.wrapper.find('.qhv-volumebar .qhv-sliderbar');
+            self.updateSliderbar($volumebar, self.volume * $volumebar.width() - $volumebar.find('.qhv-slider').width() / 2);
+            self.setDuration(formatTime.format(self.video.duration));
+            self.updatePlayTime(self.video.duration);
+            self.on();
+        }, false);
+        self.addListener();
 
-	/**
-	 * 更新滑块条位置
-	 * @param  {Number} l 进度条位置
-	 * @param  {Object} sliderbar 需要更新滑块的对象
-	 * @return {[type]}   [description]
-	 */
-	updateSliderbar(sliderbar, l) {
+    }
 
-		var self = this;
-		sliderbar.find('.ctm-slider').css('left', l);
-		sliderbar.find('.ctm-slider-bg').width(l);
+    setDuration(duration = 0) {
+            let self = this;
+            self.wrapper.find('.qhv-duration').html(duration);
+        }
+        /**
+         * 渲染自定义控件
+         * @return {[type]} [description]
+         */
+    renderControls() {
+            const self = this;
+            if (self.options.autoPlay) {
+                self.video.play();
+            }
 
-	}
+            self.wrapper.find('.qhv-ctrls').css('opacity', 1);
+        }
+        /**
+         * 更新视频播放时长
+         * @param  {Number} time 当前视频播放的时长
+         * @return {[type]}      [description]
+         */
+    updatePlayTime(time) {
+        const self = this;
+        self.wrapper.find('.qhv-current-time').html(formatTime.format(time));
+    }
 
-	/**
-	 * 添加自定义控件上的事件
-	 * @return {[type]} [description]
-	 */
-	on() {
-		const self = this;
-		const video = self.video;
-		const duration = video.duration;
-		// 播放进度条
-		const $progressbar = self.wrapper.find('.ctm-progressbar .ctm-sliderbar');
-		const barW = $progressbar.width();
-		const $slider = $progressbar.find('.ctm-slider');
-		const sliderW = $slider.width();
-		const sliderL = $progressbar.offset().left + sliderW / 2 ;
-		const progressMax = barW - sliderW;
-		const progressMin = 0;
-		// 声音
-		const $volumebar = self.wrapper.find('.ctm-volumebar .ctm-sliderbar');
-		const vbarW = $volumebar.width();
-		const $vslider = $volumebar.find('.ctm-slider');
-		const vsliderW = $vslider.width();
-		const vsliderL = $volumebar.offset().left + vsliderW / 2;
-		const volumeMax = vbarW - vsliderW;
-		const volumeMin = 0;
+    /**
+     * 更新滑块条位置
+     * @param  {Number} l 进度条位置
+     * @param  {Object} sliderbar 需要更新滑块的对象
+     * @return {[type]}   [description]
+     */
+    updateSliderbar(sliderbar, l) {
 
-		let pStartX = 0;
-		let pStartL = 0;
-		let vStartX = 0;
-		let vStartL = 0;
+            let self = this;
+            let $slider = sliderbar.find('.qhv-slider');
+            $slider.css('left', l);
+            sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
 
-		// 点击播放暂停按钮
-		self.wrapper.on('click', `.ctm-playbtn,#${self.videoId}`, (ev) => {
+        }
+        /**
+         * 更新声音条
+         * @param {Number} h 声音条高度
+         * @return {[type]} [description]
+         */
+    updateVolume(volume, h) {
+        let self = this;
+        volume.height(h);
+        self.video.volume = h / 100;
+    }
 
-			if(video.paused) {
-				video.play();
-			} else {
-				video.pause();
-			}
+    buffer() {
+        let self = this;
+        let max = self.wrapper.find('.qhv-p-sliderbar').width();
+        let buffered = self.video.buffered;
+        let start, end;
+        let bufferedDuration = 0;
+        let duration = self.video.duration;
 
-		})
-		// 点击声音静音按钮
-		.on('click', '.ctm-volume-icon', (ev) => {
+        for (let i = 0, len = buffered.length; i < len; i++) {
+            start = buffered.start(i);
+            end = buffered.end(i);
+            if (end > duration) {
+                end = duration;
+            }
+            bufferedDuration += end - start;
+        }
+        self.wrapper.find('.qhv-slider-buffer').width(bufferedDuration / duration * max);
+        if (bufferedDuration === duration) {
+            return;
+        }
+        requestAnimate(self.buffer.bind(self));
+    }
 
-			if(video.muted) {
-				video.volume = self.volume;
-				self.updateSliderbar($volumebar, self.volume * vbarW - vsliderW / 2);
-				video.muted = false;
-			} else {
-				video.volume = 0;
-				self.updateSliderbar($volumebar, 0);
-				video.muted = true;
-			}
+    /**
+     * 添加自定义控件上的事件
+     * @return {[type]} [description]
+     */
+    on() {
+        const self = this;
+        const video = self.video;
+        const duration = video.duration;
+        // 播放进度条
+        const $progressbar = self.wrapper.find('.qhv-progressbar .qhv-sliderbar');
+        const $poffset = $progressbar.offset() || { left: 0 };
+        const $slider = $progressbar.find('.qhv-slider');
 
-		})
-		// 点击全屏按钮
-		.on('click', '.ctm-fullscreen', (ev) => {
-
-			if(video.webkitRequestFullscreen) {
-				video.webkitRequestFullscreen();
-			} else if(video.requestFullscreen) {
-				video.requestFullscreen();
-			} else if(video.mozRequestFullscreen) {
-				video.mozRequestFullscreen();
-			} else if(video.msRequestFullscreen) {
-				video.msRequestFullscreen();
-			} else if(video.oRequestFullscreen) {
-				video.oRequestFullscreen();
-			}
-
-		})
-		.on('click', '.ctm-exit-fullscreen', (ev) => {
-			if(document.exitFullscreen) {
-				document.exitFullscreen();
-			} else if(document.mozCancelFullScreen) {
-				document.mozCancelFullScreen();
-			} else if(document.webkitExitFullscreen) {
-				document.webkitExitFullscreen();
-			} else if(document.oExitFullscreen) {
-				document.oExitFullscreen();
-			} else if(document.msExitFullscreen) {
-				document.msExitFullscreen();
-			}
-		})
-		// 点击播放进度条
-		.on('click', '.ctm-p-sliderbar', function(ev) {
-			
-			let offset = ev.clientX - sliderL;
-
-			offset = offset < progressMin ? progressMin : offset;
-			offset = offset > progressMax ? progressMax : offset;
-			self.updateSliderbar($(this), offset);
-			video.currentTime = offset / progressMax * duration;
-
-		})
-		// 点击声音条
-		.on('click', '.ctm-v-sliderbar', function(ev) {
-
-			let offset = ev.clientX - vsliderL;
-
-			offset = offset < volumeMin ? volumeMin : offset;
-			offset = offset > volumeMax ? volumeMax : offset;
-			self.updateSliderbar($(this), offset);
-			self.volume = video.volume = offset / volumeMax;
-
-		})
-		// 进度条滑块
-		.on('touchstart', '.ctm-p-slider', function(ev) {
-			ev.stopPropagation();
-			pStartX = ev.touches[0].screenX;
-			pStartL = parseInt($(this).css('left'));
-
-		})
-		.on('touchmove', '.ctm-p-slider', function(ev) {
-			ev.stopPropagation();
-			
-			let offset = pStartL + ev.touches[0].screenX - pStartX;
-
-			offset = offset < progressMin ? progressMin : offset;
-			offset = offset > progressMax ? progressMax : offset;
-			self.updateSliderbar($(this).closest('.ctm-sliderbar'), offset);
-			video.currentTime = offset / progressMax * duration;
-
-		})
-		
-		// 声音条滑块
-		.on('touchstart', '.ctm-v-slider', function(ev) {
-			ev.stopPropagation();
-			vStartX = ev.touches[0].screenX;
-			vStartL = parseInt($(this).css('left'));
-		})
-		.on('touchmove', '.ctm-v-slider', function(ev) {
-			ev.stopPropagation();
-			
-			let offset = vStartL + ev.touches[0].screenX - vStartX;
-
-			offset = offset < volumeMin ? volumeMin : offset;
-			offset = offset > volumeMax ? volumeMax : offset;
-			self.updateSliderbar($(this).closest('.ctm-sliderbar'), offset);
-			self.volume = video.volume = offset / volumeMax;
-
-		});
-		
-	}
+        // 声音
+        const $volumebar = self.wrapper.find('.qhv-volumebar .qhv-v-sliderbar');
+        const $vslider = $volumebar.find('.qhv-v-slider');
 
 
+        let pStartX = 0;
+        let pStartL = 0;
+        let vStartX = 0;
+        let vStartL = 0;
+        let timer = null;
+       
+        let startY = 0;
 
-	/**
-	 * 监听video自身的一些事件
-	 */
-	addListener() {
-		
-		const self = this;
-		const video = self.video;
-		const duration = video.duration;
-		const $progressbar = self.wrapper.find('.ctm-progressbar .ctm-sliderbar');
-		const $sliderbar = $progressbar.find('.ctm-slider');
-		const max = $progressbar.width() - $sliderbar.width();
-		const $screen = self.wrapper.find('.ctm-screen');
 
-		function toggleScreen(type) {
-			if(type === 1) {
-				$screen.removeClass('ctm-fullscreen').addClass('ctm-exit-fullscreen');
-				return;
-			} 
-			$screen.addClass('ctm-fullscreen').removeClass('ctm-exit-fullscreen');
-		}
+        let moved = false;
 
-		// 视频播放的进度
-		video.addEventListener('timeupdate', function(ev) {
-			self.updatePlayTime(video.currentTime);
-			self.updateSliderbar($progressbar, video.currentTime / duration * max);
-		}, false);
+        // 点击播放暂停按钮
+        self.wrapper.on('touchstart', '.qhv-playpausebtn', function(ev) {
 
-		video.addEventListener('fullscreenchange', (ev) => {
+                let $playpausebtn = self.wrapper.find('.qhv-playpausebtn');
 
-			if(document.fullscreenElement) {
-				toggleScreen(1);
-			} else {
-				toggleScreen(0);
-			}
+                if (video.paused) {
+                    video.play();
+                    $playpausebtn.removeClass('qhv-play-btn').addClass('qhv-pause-btn');
+                } else {
+                    clearTimeout(timer);
+                    video.pause();
+                    $playpausebtn.removeClass('qhv-pause-btn').addClass('qhv-play-btn');
+                }
 
-		}, false);
+            })
+            // 点击显示隐藏控制条
+            .on('touchstart', '.qhv-overlay', function(ev) {
+            	if(ev.target !== this) {
+            		return;
+            	}
+                startY = ev.touches[0].screenY;
 
-		video.addEventListener('webkitfullscreenchange', function(ev) {
-			
-			if(document.webkitFullscreenElement) {
-				toggleScreen(1);
-			} else {
-				toggleScreen(0);
-			}
+                
+                self.touchemoved = false;
 
-		}, false);
+            })
+            .on('touchmove', '.qhv-overlay', function(ev) {
+                if (ev.target !== this) {
+                    return;
+                }
+                clearTimeout(self.ctrlsHideTimer);
+                let $this = $(this);
+                let moveY = (startY - ev.touches[0].screenY) / 4 + $vslider.height();
+                
+                moveY = Math.min(100, Math.max(0, moveY));
+                self.updateVolume($vslider, moveY);
+            })
+            .on('touchend', '.qhv-overlay', function(ev) {
+               	if(ev.target !== this) {
+            		return;
+            	}
+            	$(self).trigger('controlls.delayhide');
+                
+            })
+            // 点击声音静音按钮
+            .on('touchstart', '.qhv-volume-icon', function(ev) {
+                ev.stopPropagation();
+                let $this = $('this');
+                if (video.muted) {
+                    $this.removeClass('qhv-volume-muted');
+                    video.volume = self.volume;
+                    self.updateVolume($vslider, self.volume * $volumebar.height());
+                    video.muted = false;
+                } else {
+                    $this.addClass('qhv-volume-muted');
+                    video.volume = 0;
+                    self.updateVolume($vslider, 0);
+                    video.muted = true;
+                }
 
-		video.addEventListener('msfullscreenchange', (ev) => {
+            })
+            // 点击全屏按钮
+            .on('touchstart', '.qhv-fullscreen', (ev) => {
+                ev.stopPropagation();
+                if (video.webkitRequestFullscreen) {
+                    video.webkitRequestFullscreen();
+                } else if (video.requestFullscreen) {
+                    video.requestFullscreen();
+                } else if (video.mozRequestFullscreen) {
+                    video.mozRequestFullscreen();
+                } else if (video.msRequestFullscreen) {
+                    video.msRequestFullscreen();
+                } else if (video.oRequestFullscreen) {
+                    video.oRequestFullscreen();
+                }
 
-			if(document.msFullscreenElement) {
-				toggleScreen(1);
-			} else {
-				toggleScreen(0);
-			}
+            })
+            .on('touchstart', '.qhv-exit-fullscreen', (ev) => {
+                ev.stopPropagation();
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.oExitFullscreen) {
+                    document.oExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            })
+            // 点击播放进度条
+            .on('touchstart', '.qhv-p-sliderbar', function(ev) {
 
-		}, false);
+                const barW = $progressbar.width();
+                const sliderW = $slider.width();
+                const sliderL = $poffset.left + sliderW / 2;
+                const progressMax = barW - sliderW;
 
-		video.addEventListener('mozfullscreenchange', (ev) => {
+                let offset = ev.touches[0].pageX - sliderL;
 
-			if(document.mozFullscreenElement) {
-				toggleScreen(1);
-			} else {
-				toggleScreen(0);
-			}
+                offset = Math.min(Math.max(offset, 0), progressMax);
+                video.currentTime = offset / progressMax * duration;
+                self.updateSliderbar($(this).closest('.qhv-sliderbar'), offset);
+            })
+            // 进度条滑块
+            .on('touchstart', '.qhv-p-slider', function(ev) {
+                ev.stopPropagation();
+                pStartX = ev.touches[0].pageX;
+                pStartL = parseInt($(this).css('left'));
 
-		}, false);
+            })
+            .on('touchmove', '.qhv-p-slider', function(ev) {
+                ev.stopPropagation();
 
-		video.addEventListener('ofullscreenchange', (ev) => {
+                let offset = pStartL + ev.touches[0].pageX - pStartX;
 
-			if(document.oFullscreenElement) {
-				toggleScreen(1);
-			} else {
-				toggleScreen(0);
-			}
+                const barW = $progressbar.width();
+                const sliderW = $slider.width();
+                const sliderL = $poffset.left + sliderW / 2;
+                const progressMax = barW - sliderW;
 
-		}, false);
+                offset = Math.min(Math.max(offset, 0), progressMax);
 
-	}
+                self.updateSliderbar($(this).closest('.qhv-sliderbar'), offset);
+
+                video.currentTime = offset / progressMax * duration;
+
+            });
+
+    }
+
+    listener() {
+    	let self = this;
+    	let $self = $(self);
+    	$(self).on('controlls.show', function(ev) {
+    		let $overlay = self.wrapper.find('.qhv-overlay');
+    		let $ctrl = $overlay.find('.qhv-ctrls');
+    		let $midbtn = $overlay.find('.qhv-overlay-btn');
+    		let $volume = $overlay.find('.qhv-volumebar');
+
+    		$midbtn.add($volume).show();
+    		$ctrl.css('opacity', 1);
+
+    	})
+    	.on('controlls.delayhide', function() {
+    		$self.trigger('controlls.show');
+    		self.ctrlsHideTimer = setTimeout(function() {
+    			$self.trigger('controlls.hide');
+    		}, 3000)
+    	})
+    	.on('controlls.hide', function() {
+    		let $overlay = self.wrapper.find('.qhv-overlay');
+    		let $ctrl = $overlay.find('.qhv-ctrls');
+    		let $midbtn = $overlay.find('.qhv-overlay-btn');
+    		let $volume = $overlay.find('.qhv-volumebar');
+
+    		$midbtn.add($volume).hide();
+    		$ctrl.css('opacity', 0);
+    		self.ctrlsHideTimer = null;
+    	})
+    	.on('playing', function() {
+    		self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-play-btn');
+    	})
+    	.on('paused', function() {
+    		self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn').addClass('qhv-play-btn');
+    	})
+    	.on('ended', function() {
+    		$self.trigger('controlls.show').trigger('paused');
+    	})
+    	.on('waiting', function() {
+    		$self.trigger('controlls.show');
+    		self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').addClass('qhv-loading');
+    	});
+    }
+
+    /**
+     * 监听video自身的一些事件
+     */
+    addListener() {
+
+        const self = this;
+        const video = self.video;
+        const $progressbar = self.wrapper.find('.qhv-progressbar .qhv-sliderbar');
+        const $sliderbar = $progressbar.find('.qhv-slider');
+
+        const $screen = self.wrapper.find('.qhv-screen');
+
+        function toggleScreen(type) {
+            if (type === 1) {
+                $screen.removeClass('qhv-fullscreen').addClass('qhv-exit-fullscreen');
+                return;
+            }
+            $screen.addClass('qhv-fullscreen').removeClass('qhv-exit-fullscreen');
+        }
+
+        // 视频播放的进度
+        video.addEventListener('timeupdate', function(ev) {
+
+            const max = $progressbar.width() - $sliderbar.width();
+
+            self.updatePlayTime(video.currentTime);
+            self.updateSliderbar($progressbar, video.currentTime / video.duration * max);
+
+        }, false);
+
+        video.addEventListener('fullscreenchange', (ev) => {
+
+            if (document.fullscreenElement) {
+                toggleScreen(1);
+            } else {
+                toggleScreen(0);
+            }
+
+        }, false);
+
+        video.addEventListener('webkitfullscreenchange', function(ev) {
+
+            if (document.webkitFullscreenElement) {
+                toggleScreen(1);
+            } else {
+                toggleScreen(0);
+            }
+
+        }, false);
+
+        video.addEventListener('msfullscreenchange', (ev) => {
+
+            if (document.msFullscreenElement) {
+                toggleScreen(1);
+            } else {
+                toggleScreen(0);
+            }
+
+        }, false);
+
+        video.addEventListener('mozfullscreenchange', (ev) => {
+
+            if (document.mozFullscreenElement) {
+                toggleScreen(1);
+            } else {
+                toggleScreen(0);
+            }
+
+        }, false);
+
+        video.addEventListener('ofullscreenchange', (ev) => {
+
+            if (document.oFullscreenElement) {
+                toggleScreen(1);
+            } else {
+                toggleScreen(0);
+            }
+
+        }, false);
+
+    }
 }
 
 window.Video = Video;

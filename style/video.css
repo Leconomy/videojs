@@ -1,83 +1,239 @@
-.ctm-v-box video::-webkit-media-controls-enclosure {
-  display:none !important;
-}
-.ctm-v-box{
-	position: relative;
-	width: 100%;
-}
-.ctm-v-box .ctm-ctrls {
-	width: 100%;
-	height: 40px;
-	position: absolute;
-	left: 0;
-	top: 100%;
-	z-index: 2147483648;
-	background: rgba(0, 0, 0, .8);
-	opacity: 0;
-}
-.ctm-v-box .ctm-ctrl {
-	float: left;
-	margin-top: 4px;
-}
-.ctm-v-box .ctm-playbtn{
-	width: 20px;
-	height: 20px;
-	color: #FFF;
+qhvdiv {
+    display: block;
 }
 
-.ctm-v-box .ctm-slider-bg{
-	height: 100%;
-	position: absolute;
-	top: 0;
-	left: 0;
-	background-color: #fff; 
-}
-.ctm-v-box .ctm-progressbar .ctm-sliderbar{
-	width: 80px;
-	height: 10px;
-	position: relative;
-	border: 1px solid #aaa;
-	border-radius: 4px;
-	background: #333;
-	display: inline-block;
-}
-.ctm-v-box .ctm-progressbar .ctm-slider{
-	width: 20px;
-	height: 16px;
-	position: absolute;
-	top: -2px;
-	left: 0;
-	background-color: #fff;
-	border-radius: 40%;
-}
-.ctm-v-box .ctm-progressbar .ctm-duration{
-	display: inline-block;
-	color: #fff;
-}
-.ctm-v-box .ctm-volumebar .ctm-volume-icon{
-	width: 10px;
-	height: 10px;
-	display: inline-block;
-	background: #fff;
-}
-.ctm-v-box .ctm-volumebar .ctm-sliderbar{
-	width: 80px;
-	height: 10px;
-	position: relative;
-	border: 1px solid #aaa;
-	border-radius: 4px;
-	background: #333;
-	display: inline-block;
-}
-.ctm-v-box .ctm-volumebar .ctm-slider{
-	width: 20px;
-	height: 16px;
-	position: absolute;
-	top: -2px;
-	background-color: #fff;
-	border-radius: 40%;
+.qhv-v-box video::-webkit-media-controls-enclosure {
+    display: none !important;
 }
 
-.ctm-v-box .ctm-screen {
-	color: #fff;
+.qhv-v-box {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    font-size: 16px;
+}
+
+.qhv-v-box video {
+    position: relative;
+}
+
+.qhv-overlay {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2147483648;
+}
+
+.qhv-v-box .qhv-ctrls-box {
+    width: 100%;
+    height: 100%;
+    display: -webkit-box;
+    -webkit-box-flex: 1;
+}
+
+.qhv-v-box .qhv-ctrls {
+    width: 100%;
+    height: 2.5em;
+    padding: .625em;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    z-index: 2147483648;
+    background: rgba(0, 0, 0, .4);
+    opacity: 0;
+    font-size: .74em;
+}
+
+.qhv-v-box .qhv-ctrls-box .qhv-playpausebtn {
+    width: 1em;
+    height: 1em;
+    color: #FFF;
+    font-size: 1em;
+    background: url(../images/controls.png) no-repeat;
+}
+
+
+
+.qhv-v-box .qhv-ctrls-box .qhv-play-btn {
+    background-position: 0 0;
+}
+
+.qhv-v-box .qhv-ctrls-box .qhv-pause-btn {
+    background-position: 0 -16px;
+}
+
+.qhv-v-box .qhv-progressbar {
+    display: -webkit-box;
+    -webkit-box-flex: 1;
+    padding-left: .625em;
+}
+
+.qhv-v-box .qhv-slider-bg,
+.qhv-v-box .qhv-slider-buffer {
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.qhv-v-box .qhv-slider-bg {
+    border-radius: .5em;
+    background-color: #fff;
+}
+
+.qhv-v-box .qhv-slider-buffer {
+    background-color: #999;
+    border-radius: .5em;
+}
+
+.qhv-v-box .qhv-progressbar .qhv-sliderbar {
+    width: 100%;
+    height: .625em;
+    padding-top: .25em;
+    position: relative;
+    border: .0625em solid #aaa;
+    border-radius: .5em;
+    background: #333;
+    margin-top: .0625em;
+    -webkit-box-flex: 1;
+    display: -webkit-box;
+}
+
+.qhv-v-box .qhv-progressbar .qhv-slider {
+    width: 2em;
+    height: 1em;
+    position: absolute;
+    top: -0.125em;
+    left: 0;
+    background-color: #fff;
+    border-radius: .5em;
+}
+
+.qhv-v-box .qhv-progressbar .qhv-duration,
+.qhv-v-box .qhv-progressbar .qhv-current-time,
+.qhv-v-box .qhv-progressbar .qhv-sep {
+    color: #fff;
+    max-width: 4em;
+}
+
+.qhv-v-box .qhv-progressbar .qhv-current-time {
+    padding-left: .625em;
+}
+
+
+
+/*声音条*/
+
+.qhv-v-box .qhv-volumebar {
+    width: 1em;
+    height: 8.25em;
+    position: absolute;
+    left: 1em;
+    top: 50%;
+    margin-top: -4.125em;
+}
+
+.qhv-v-box .qhv-volumebar .qhv-volume-icon {
+    width: 1em;
+    height: 1em;
+    margin-bottom: .5em;
+    margin-top: .5em;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background: url(../images/controls.png) no-repeat -16px -16px;
+}
+
+.qhv-v-box .qhv-volumebar .qhv-volume-muted {
+    background-position: -16px 0;
+}
+
+.qhv-v-box .qhv-volumebar .qhv-v-sliderbar {
+    width: .25em;
+    height: 6.25em;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    margin-left: -.125em;
+    background: #fff;
+}
+
+.qhv-v-box .qhv-volumebar .qhv-v-slider {
+    width: 100%;
+    height: 50%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background-color: red;
+}
+
+
+/*全屏按钮*/
+
+.qhv-v-box .qhv-screen {
+    color: #fff;
+    padding-left: .625em;
+}
+
+
+/*视频上的暂停播放按钮*/
+
+.qhv-overlay-btn {
+    width: 3.125em;
+    height: 3.125em;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -1.5625em;
+    margin-left: -1.5625em;
+}
+
+.qhv-overlay-btn .qhv-playpausebtn {
+    width: 100%;
+    height: 100%;
+    background: url(../images/bigplay.png) no-repeat;
+    background-size: cover;
+}
+.qhv-overlay-btn .qhv-loading {
+    background-color: #fff;
+    width: 100%;
+    height: 100%;
+    border-radius: 100%;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    border: .5em solid #fff;
+    border-bottom-color: transparent;
+    background: transparent !important;
+    -webkit-animation: rotate 0.75s 0s linear infinite;
+    animation: rotate 0.75s 0s linear infinite;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+@keyframes rotate {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    50% {
+        -webkit-transform: rotate(180deg);
+        transform: rotate(180deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}
+.qhv-overlay-btn .qhv-play-btn {
+    background-position: 0 0;
+}
+
+.qhv-overlay-btn .qhv-pause-btn {
+    background-position: 0 -3.125em;
 }

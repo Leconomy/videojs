@@ -40,4 +40,4 @@ class FormatTime {
 	}
 }
 var formatTime = new FormatTime();
-export {formatTime}
+module.exports = formatTime;
