@@ -79,72 +79,11 @@ class Video {
         $(video).appendTo(self.wrapper);
         self.video = document.getElementById(self.videoId);
         $(self.video).ready(function() {
-                self.renderControls();
-                self.video.volume = self.volume;
+            self.renderControls();
+            self.video.volume = self.volume;
 
-                requestAnimate(self.buffer.bind(self));
-            })
-            self.video.addEventListener('loadstart', function() {
-            	$(self).trigger('waiting');
-            }, false);
-            self.video.addEventListener('waiting', function() {
-            	$(self).trigger('waiting');console.log('waiting');
-            }, false);
-            self.video.addEventListener('canplay', function() {
-            	self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-loading');
-            }, false);
-            // self.video.addEventListener('canplaythrough', type, false);
-            // self.video.addEventListener('playing', type, false);
-            self.video.addEventListener('ended', function() {
-            	$(self).trigger('ended');
-            	
-            }, false);
-            self.video.addEventListener('seeking', function() {
-            	$(self).trigger('waiting');
-            }, false);
-            self.video.addEventListener('seeked', function() {
-
-            }, false);
-            self.video.addEventListener('play', function() {
-            	$(self).trigger('controlls.delayhide');
-            }, false);
-            // self.video.addEventListener('firstplay', type, false);
-            self.video.addEventListener('pause', function() {
-            	$(self).trigger('controlls.show');
-            	clearTimeout(self.ctrlsHideTimer);
-            }, false);
-            self.video.addEventListener('progress', function() {
-            	console.log('progress');
-            }, false);
-            // self.video.addEventListener('durationchange', type, false);
-            // self.video.addEventListener('fullscreenchange', type, false);
-            self.video.addEventListener('error', function() {
-            	console.log('error')
-            }, false);
-            self.video.addEventListener('suspend', function() {
-            	console.log('suspend')
-            	// $(self).trigger('waiting');
-            }, false);
-            self.video.addEventListener('abort', function() {
-            	console.log('abort');
-            }, false);
-            self.video.addEventListener('emptied', function() {
-            	console.log('emptied')
-            }, false);
-            self.video.addEventListener('stalled', function() {
-            	console.log('stalled')
-            	$(self).trigger('waiting');
-            }, false);
-            // self.video.addEventListener('loadedmetadata', type, false);
-            self.video.addEventListener('loadeddata', function() {
-            	console.log('loadeddata')
-            }, false);
-            // self.video.addEventListener('ratechange', type, false);
-            // self.video.addEventListener('volumechange', type, false);
-            // self.video.addEventListener('texttrackchange', type, false);
-            self.video.addEventListener('posterchange', function() {
-            	console.log('posterchange')
-            }, false);
+            requestAnimate(self.buffer.bind(self));
+        })
         self.video.addEventListener('loadedmetadata', function() {
             let $volumebar = self.wrapper.find('.qhv-volumebar .qhv-sliderbar');
             self.updateSliderbar($volumebar, self.volume * $volumebar.width() - $volumebar.find('.qhv-slider').width() / 2);
@@ -253,7 +192,7 @@ class Video {
         let vStartX = 0;
         let vStartL = 0;
         let timer = null;
-       
+
         let startY = 0;
 
 
@@ -276,12 +215,12 @@ class Video {
             })
             // 点击显示隐藏控制条
             .on('touchstart', '.qhv-overlay', function(ev) {
-            	if(ev.target !== this) {
-            		return;
-            	}
+                if (ev.target !== this) {
+                    return;
+                }
                 startY = ev.touches[0].screenY;
 
-                
+
                 self.touchemoved = false;
 
             })
@@ -292,16 +231,16 @@ class Video {
                 clearTimeout(self.ctrlsHideTimer);
                 let $this = $(this);
                 let moveY = (startY - ev.touches[0].screenY) / 4 + $vslider.height();
-                
+
                 moveY = Math.min(100, Math.max(0, moveY));
                 self.updateVolume($vslider, moveY);
             })
             .on('touchend', '.qhv-overlay', function(ev) {
-               	if(ev.target !== this) {
-            		return;
-            	}
-            	$(self).trigger('controlls.delayhide');
-                
+                if (ev.target !== this) {
+                    return;
+                }
+                $(self).trigger('controlls.delayhide');
+
             })
             // 点击声音静音按钮
             .on('touchstart', '.qhv-volume-icon', function(ev) {
@@ -392,47 +331,50 @@ class Video {
     }
 
     listener() {
-    	let self = this;
-    	let $self = $(self);
-    	$(self).on('controlls.show', function(ev) {
-    		let $overlay = self.wrapper.find('.qhv-overlay');
-    		let $ctrl = $overlay.find('.qhv-ctrls');
-    		let $midbtn = $overlay.find('.qhv-overlay-btn');
-    		let $volume = $overlay.find('.qhv-volumebar');
+        let self = this;
+        let $self = $(self);
+        $(self).on('controlls.show', function(ev) {
+                let $overlay = self.wrapper.find('.qhv-overlay');
+                let $ctrl = $overlay.find('.qhv-ctrls');
+                let $midbtn = $overlay.find('.qhv-overlay-btn');
+                let $volume = $overlay.find('.qhv-volumebar');
 
-    		$midbtn.add($volume).show();
-    		$ctrl.css('opacity', 1);
+                $midbtn.add($volume).show();
+                $ctrl.css('opacity', 1);
 
-    	})
-    	.on('controlls.delayhide', function() {
-    		$self.trigger('controlls.show');
-    		self.ctrlsHideTimer = setTimeout(function() {
-    			$self.trigger('controlls.hide');
-    		}, 3000)
-    	})
-    	.on('controlls.hide', function() {
-    		let $overlay = self.wrapper.find('.qhv-overlay');
-    		let $ctrl = $overlay.find('.qhv-ctrls');
-    		let $midbtn = $overlay.find('.qhv-overlay-btn');
-    		let $volume = $overlay.find('.qhv-volumebar');
+            })
+            .on('controlls.delayhide', function() {
+                $self.trigger('controlls.show');
+                self.ctrlsHideTimer = setTimeout(function() {
+                    $self.trigger('controlls.hide');
+                }, 3000)
+            })
+            .on('controlls.hide', function() {
+                let $overlay = self.wrapper.find('.qhv-overlay');
+                let $ctrl = $overlay.find('.qhv-ctrls');
+                let $midbtn = $overlay.find('.qhv-overlay-btn');
+                let $volume = $overlay.find('.qhv-volumebar');
 
-    		$midbtn.add($volume).hide();
-    		$ctrl.css('opacity', 0);
-    		self.ctrlsHideTimer = null;
-    	})
-    	.on('playing', function() {
-    		self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-play-btn');
-    	})
-    	.on('paused', function() {
-    		self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn').addClass('qhv-play-btn');
-    	})
-    	.on('ended', function() {
-    		$self.trigger('controlls.show').trigger('paused');
-    	})
-    	.on('waiting', function() {
-    		$self.trigger('controlls.show');
-    		self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').addClass('qhv-loading');
-    	});
+                $midbtn.add($volume).hide();
+                $ctrl.css('opacity', 0);
+                self.ctrlsHideTimer = null;
+            })
+            .on('playing', function() {
+                self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-play-btn');
+            })
+            .on('paused', function() {
+                self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn').addClass('qhv-play-btn');
+            })
+            .on('canplaythrough', function() {
+            	self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-loading');
+            })
+            .on('ended', function() {
+                $self.trigger('controlls.show').trigger('paused');
+            })
+            .on('waiting', function() {
+                $self.trigger('controlls.show');
+                self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').addClass('qhv-loading');
+            });
     }
 
     /**
@@ -457,7 +399,7 @@ class Video {
 
         // 视频播放的进度
         video.addEventListener('timeupdate', function(ev) {
-
+            // console.log('timeupdate')
             const max = $progressbar.width() - $sliderbar.width();
 
             self.updatePlayTime(video.currentTime);
@@ -515,6 +457,89 @@ class Video {
 
         }, false);
 
+
+        video.addEventListener('loadstart', function() {
+            $(self).trigger('waiting');
+        }, false);
+
+        video.addEventListener('waiting', function() {
+            $(self).trigger('waiting');
+            // console.log('waiting');
+        }, false);
+
+        video.addEventListener('canplay', function() {
+            // console.log('canplaythrough')
+        }, false);
+
+        video.addEventListener('canplaythrough', function() {
+            // console.log('canplaythrough')
+            $(self).trigger('canplaythrough')
+        }, false);
+
+        // video.addEventListener('playing', type, false);
+        video.addEventListener('ended', function() {
+            $(self).trigger('ended');
+
+        }, false);
+
+        video.addEventListener('seeking', function() {
+            $(self).trigger('waiting');
+        }, false);
+
+        video.addEventListener('seeked', function() {
+
+        }, false);
+
+        video.addEventListener('play', function() {
+            $(self).trigger('controlls.delayhide');
+        }, false);
+
+        // video.addEventListener('firstplay', type, false);
+        video.addEventListener('pause', function() {
+            $(self).trigger('controlls.show');
+            clearTimeout(self.ctrlsHideTimer);
+        }, false);
+        
+        video.addEventListener('progress', function(ev) {
+        	
+        }, false);
+
+        // video.addEventListener('durationchange', type, false);
+        // video.addEventListener('fullscreenchange', type, false);
+        video.addEventListener('error', function() {
+            // console.log('error')
+        }, false);
+
+        video.addEventListener('suspend', function() {
+            // console.log('suspend')
+                // $(self).trigger('waiting');
+        }, false);
+
+        video.addEventListener('abort', function() {
+            // console.log('abort');
+        }, false);
+
+        video.addEventListener('emptied', function() {
+            // console.log('emptied')
+        }, false);
+
+        video.addEventListener('stalled', function() {
+            // console.log('stalled')
+            $(self).trigger('waiting');
+        }, false);
+
+        // video.addEventListener('loadedmetadata', type, false);
+        video.addEventListener('loadeddata', function() {
+            // console.log('loadeddata')
+        }, false);
+
+        // video.addEventListener('ratechange', type, false);
+        // video.addEventListener('volumechange', type, false);
+        // video.addEventListener('texttrackchange', type, false);
+        
+        video.addEventListener('posterchange', function() {
+            // console.log('posterchange')
+        }, false);
     }
 }
 

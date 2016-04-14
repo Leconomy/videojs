@@ -112,64 +112,6 @@
 
 	                requestAnimate(self.buffer.bind(self));
 	            });
-	            self.video.addEventListener('loadstart', function () {
-	                $(self).trigger('waiting');
-	            }, false);
-	            self.video.addEventListener('waiting', function () {
-	                $(self).trigger('waiting');console.log('waiting');
-	            }, false);
-	            self.video.addEventListener('canplay', function () {
-	                self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-loading');
-	            }, false);
-	            // self.video.addEventListener('canplaythrough', type, false);
-	            // self.video.addEventListener('playing', type, false);
-	            self.video.addEventListener('ended', function () {
-	                $(self).trigger('ended');
-	            }, false);
-	            self.video.addEventListener('seeking', function () {
-	                $(self).trigger('waiting');
-	            }, false);
-	            self.video.addEventListener('seeked', function () {}, false);
-	            self.video.addEventListener('play', function () {
-	                $(self).trigger('controlls.delayhide');
-	            }, false);
-	            // self.video.addEventListener('firstplay', type, false);
-	            self.video.addEventListener('pause', function () {
-	                $(self).trigger('controlls.show');
-	                clearTimeout(self.ctrlsHideTimer);
-	            }, false);
-	            self.video.addEventListener('progress', function () {
-	                console.log('progress');
-	            }, false);
-	            // self.video.addEventListener('durationchange', type, false);
-	            // self.video.addEventListener('fullscreenchange', type, false);
-	            self.video.addEventListener('error', function () {
-	                console.log('error');
-	            }, false);
-	            self.video.addEventListener('suspend', function () {
-	                console.log('suspend');
-	                // $(self).trigger('waiting');
-	            }, false);
-	            self.video.addEventListener('abort', function () {
-	                console.log('abort');
-	            }, false);
-	            self.video.addEventListener('emptied', function () {
-	                console.log('emptied');
-	            }, false);
-	            self.video.addEventListener('stalled', function () {
-	                console.log('stalled');
-	                $(self).trigger('waiting');
-	            }, false);
-	            // self.video.addEventListener('loadedmetadata', type, false);
-	            self.video.addEventListener('loadeddata', function () {
-	                console.log('loadeddata');
-	            }, false);
-	            // self.video.addEventListener('ratechange', type, false);
-	            // self.video.addEventListener('volumechange', type, false);
-	            // self.video.addEventListener('texttrackchange', type, false);
-	            self.video.addEventListener('posterchange', function () {
-	                console.log('posterchange');
-	            }, false);
 	            self.video.addEventListener('loadedmetadata', function () {
 	                var $volumebar = self.wrapper.find('.qhv-volumebar .qhv-sliderbar');
 	                self.updateSliderbar($volumebar, self.volume * $volumebar.width() - $volumebar.find('.qhv-slider').width() / 2);
@@ -449,6 +391,8 @@
 	                self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-play-btn');
 	            }).on('paused', function () {
 	                self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn').addClass('qhv-play-btn');
+	            }).on('canplaythrough', function () {
+	                self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-loading');
 	            }).on('ended', function () {
 	                $self.trigger('controlls.show').trigger('paused');
 	            }).on('waiting', function () {
@@ -482,7 +426,7 @@
 
 	            // 视频播放的进度
 	            video.addEventListener('timeupdate', function (ev) {
-
+	                // console.log('timeupdate')
 	                var max = $progressbar.width() - $sliderbar.width();
 
 	                self.updatePlayTime(video.currentTime);
@@ -532,6 +476,84 @@
 	                } else {
 	                    toggleScreen(0);
 	                }
+	            }, false);
+
+	            video.addEventListener('loadstart', function () {
+	                $(self).trigger('waiting');
+	            }, false);
+
+	            video.addEventListener('waiting', function () {
+	                $(self).trigger('waiting');
+	                // console.log('waiting');
+	            }, false);
+
+	            video.addEventListener('canplay', function () {
+	                // console.log('canplaythrough')
+	            }, false);
+
+	            video.addEventListener('canplaythrough', function () {
+	                // console.log('canplaythrough')
+	                $(self).trigger('canplaythrough');
+	            }, false);
+
+	            // video.addEventListener('playing', type, false);
+	            video.addEventListener('ended', function () {
+	                $(self).trigger('ended');
+	            }, false);
+
+	            video.addEventListener('seeking', function () {
+	                $(self).trigger('waiting');
+	            }, false);
+
+	            video.addEventListener('seeked', function () {}, false);
+
+	            video.addEventListener('play', function () {
+	                $(self).trigger('controlls.delayhide');
+	            }, false);
+
+	            // video.addEventListener('firstplay', type, false);
+	            video.addEventListener('pause', function () {
+	                $(self).trigger('controlls.show');
+	                clearTimeout(self.ctrlsHideTimer);
+	            }, false);
+
+	            video.addEventListener('progress', function (ev) {}, false);
+
+	            // video.addEventListener('durationchange', type, false);
+	            // video.addEventListener('fullscreenchange', type, false);
+	            video.addEventListener('error', function () {
+	                // console.log('error')
+	            }, false);
+
+	            video.addEventListener('suspend', function () {
+	                // console.log('suspend')
+	                // $(self).trigger('waiting');
+	            }, false);
+
+	            video.addEventListener('abort', function () {
+	                // console.log('abort');
+	            }, false);
+
+	            video.addEventListener('emptied', function () {
+	                // console.log('emptied')
+	            }, false);
+
+	            video.addEventListener('stalled', function () {
+	                // console.log('stalled')
+	                $(self).trigger('waiting');
+	            }, false);
+
+	            // video.addEventListener('loadedmetadata', type, false);
+	            video.addEventListener('loadeddata', function () {
+	                // console.log('loadeddata')
+	            }, false);
+
+	            // video.addEventListener('ratechange', type, false);
+	            // video.addEventListener('volumechange', type, false);
+	            // video.addEventListener('texttrackchange', type, false);
+
+	            video.addEventListener('posterchange', function () {
+	                // console.log('posterchange')
 	            }, false);
 	        }
 	    }]);
