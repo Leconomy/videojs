@@ -517,14 +517,15 @@
 	                }
 	            }, false);
 
-	            video.addEventListener('canplaythrough', function () {
-	                // console.log('canplaythrough')
-	                // $self.trigger('canplaythrough')
-	            }, false);
+	            // video.addEventListener('canplaythrough', function() {
+	            //     // console.log('canplaythrough')
+	            //     // $self.trigger('canplaythrough')
+	            // }, false);
 
-	            video.addEventListener('playing', function () {
-	                // console.log('playing')
-	            }, false);
+	            // video.addEventListener('playing', function() {
+	            // 	// console.log('playing')
+	            // }, false);
+
 	            video.addEventListener('ended', function () {
 	                $self.trigger('ended');
 	            }, false);
@@ -533,7 +534,9 @@
 	                $self.trigger('waiting');
 	            }, false);
 
-	            video.addEventListener('seeked', function () {}, false);
+	            // video.addEventListener('seeked', function() {
+
+	            // }, false);
 
 	            video.addEventListener('play', function () {
 	                $self.trigger('controlls.delayhide');
@@ -544,26 +547,28 @@
 	                clearTimeout(self.ctrlsHideTimer);
 	            }, false);
 
-	            video.addEventListener('progress', function (ev) {}, false);
+	            // video.addEventListener('progress', function(ev) {
+
+	            // }, false);
 
 	            // video.addEventListener('durationchange', type, false);
 	            // video.addEventListener('fullscreenchange', type, false);
-	            video.addEventListener('error', function () {
-	                // console.log('error')
-	            }, false);
+	            // video.addEventListener('error', function() {
+	            //     // console.log('error')
+	            // }, false);
 
-	            video.addEventListener('suspend', function () {
-	                // console.log('suspend')
-	                // $self.trigger('waiting');
-	            }, false);
+	            // video.addEventListener('suspend', function() {
+	            //     // console.log('suspend')
+	            //         // $self.trigger('waiting');
+	            // }, false);
 
-	            video.addEventListener('abort', function () {
-	                // console.log('abort');
-	            }, false);
+	            // video.addEventListener('abort', function() {
+	            //     // console.log('abort');
+	            // }, false);
 
-	            video.addEventListener('emptied', function () {
-	                // console.log('emptied')
-	            }, false);
+	            // video.addEventListener('emptied', function() {
+	            //     // console.log('emptied')
+	            // }, false);
 
 	            video.addEventListener('stalled', function () {
 	                // console.log('stalled')
@@ -573,9 +578,9 @@
 	                }
 	            }, false);
 
-	            video.addEventListener('loadeddata', function () {
-	                // console.log('loadeddata')
-	            }, false);
+	            // video.addEventListener('loadeddata', function() {
+	            //     // console.log('loadeddata')
+	            // }, false);
 
 	            video.addEventListener('loadedmetadata', function () {
 	                var $volumebar = self.wrapper.find('.qhv-volumebar .qhv-sliderbar');
@@ -589,9 +594,9 @@
 	            // video.addEventListener('volumechange', type, false);
 	            // video.addEventListener('texttrackchange', type, false);
 
-	            video.addEventListener('posterchange', function () {
-	                // console.log('posterchange')
-	            }, false);
+	            // video.addEventListener('posterchange', function() {
+	            //     // console.log('posterchange')
+	            // }, false);
 	        }
 	    }]);
 
