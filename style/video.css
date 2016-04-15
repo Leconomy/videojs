@@ -53,19 +53,36 @@ qhvdiv {
     height: 1em;
     color: #FFF;
     font-size: 1em;
-    background: url(../images/controls.png) no-repeat;
+    position: relative;
 }
 
-
-
-.qhv-v-box .qhv-ctrls-box .qhv-play-btn {
-    background-position: 0 0;
+.qhv-v-box .qhv-ctrls-box .qhv-play-btn:after {
+    width: 0;
+    height: 0;
+    border-top: .5em solid transparent;
+    border-left: 1em solid #fff;
+    border-bottom: .5em solid transparent;
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -.5em;
+    margin-top: -.5em;
 }
-
-.qhv-v-box .qhv-ctrls-box .qhv-pause-btn {
-    background-position: 0 -16px;
+.qhv-v-box .qhv-ctrls-box .qhv-pause-btn:after {
+    width: 1em;
+    height: 1em;
+    border-left: .4em solid #fff;
+    border-right: .4em solid #fff;
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -.5em;
+    margin-top: -.5em;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
 }
-
 .qhv-v-box .qhv-progressbar {
     display: -webkit-box;
     -webkit-box-flex: 1;
@@ -132,11 +149,10 @@ qhvdiv {
 
 .qhv-v-box .qhv-volumebar {
     width: 1em;
-    height: 8.25em;
+    height: 7.25em;
     position: absolute;
     left: 1em;
-    top: 50%;
-    margin-top: -4.125em;
+    bottom: 1.5em;
 }
 
 .qhv-v-box .qhv-volumebar .qhv-volume-icon {
@@ -156,7 +172,7 @@ qhvdiv {
 
 .qhv-v-box .qhv-volumebar .qhv-v-sliderbar {
     width: .25em;
-    height: 6.25em;
+    height: 5.25em;
     position: absolute;
     top: 0;
     left: 50%;
@@ -192,14 +208,23 @@ qhvdiv {
     left: 50%;
     margin-top: -1.5625em;
     margin-left: -1.5625em;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+
 }
 
 .qhv-overlay-btn .qhv-playpausebtn {
     width: 100%;
     height: 100%;
-    background: url(../images/bigplay.png) no-repeat;
-    background-size: cover;
+    /*background: url(../images/bigplay.png) no-repeat;
+    background-size: cover;*/
+    border: .5em solid #fff;
+    border-radius: 50%;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    position: relative;
 }
+
 .qhv-overlay-btn .qhv-loading {
     background-color: #fff;
     width: 100%;
@@ -230,10 +255,31 @@ qhvdiv {
         transform: rotate(360deg);
     }
 }
-.qhv-overlay-btn .qhv-play-btn {
-    background-position: 0 0;
-}
 
-.qhv-overlay-btn .qhv-pause-btn {
-    background-position: 0 -3.125em;
+.qhv-overlay-btn .qhv-play-btn:after {
+    width: 0;
+    height: 0;
+    border-top: .8em solid transparent;
+    border-left: 1.4em solid #fff;
+    border-bottom: .8em solid transparent;
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -.5em;
+    margin-top: -.8em;
+}
+.qhv-overlay-btn .qhv-pause-btn:after {
+    width: 1em;
+    height: 1.4em;
+    border-left: .4em solid #fff;
+    border-right: .4em solid #fff;
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -.5em;
+    margin-top: -.7em;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
 }

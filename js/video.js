@@ -57,7 +57,7 @@ class Video {
 					<qhvdiv class="qhv-overlay">
 						<qhvdiv class="qhv-ctrls">
 							<qhvdiv class="qhv-ctrls-box">
-								<qhvdiv class="qhv-ctrl qhv-playpausebtn"></qhvdiv>
+								<qhvdiv class="qhv-ctrl qhv-playpausebtn qhv-play-btn"></qhvdiv>
 								<qhvdiv class="qhv-ctrl qhv-progressbar">
 									<qhvdiv class="qhv-sliderbar qhv-p-sliderbar">
 										<qhvdiv class="qhv-slider-buffer"></qhvdiv>
@@ -72,7 +72,7 @@ class Video {
 							</qhvdiv>
 						</qhvdiv>
 						<qhvdiv class="qhv-overlay-btn">
-							<qhvdiv class="qhv-playpausebtn"></qhvdiv>	
+							<qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv>	
 						</qhvdiv>
 						<qhvdiv class="qhv-volumebar">
 							<qhvdiv class="qhv-v-sliderbar">
@@ -205,7 +205,7 @@ class Video {
                 let $playpausebtn = self.wrapper.find('.qhv-playpausebtn');
                 self.firstplay = true;
                 if (video.paused) {
-                    video.play();
+                    video.play();console.log(2)
                     $playpausebtn.removeClass('qhv-play-btn').addClass('qhv-pause-btn');
                 } else {
                     video.pause();
@@ -236,6 +236,7 @@ class Video {
                 if (ev.target !== this || !self.firstplay) {
                     return;
                 }
+            	clearTimeout(self.ctrlsHideTimer);
                 $(self).trigger('controlls.show')
                 if(!video.paused) {
                 	$(self).trigger('controlls.delayhide');
@@ -368,7 +369,7 @@ class Video {
             	self.loading = false;
             })
             .on('playing', function() {
-            	$self.trigger('loaded');
+            	$self.trigger('loaded');console.log(3)
                 self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-play-btn');
             })
             .on('paused', function() {
@@ -402,10 +403,10 @@ class Video {
 
         function toggleScreen(type) {
             if (type === 1) {
-                $screen.removeClass('qhv-fullscreen').addClass('qhv-exit-fullscreen');
+                $screen.removeClass('qhv-fullscreen').addClass('qhv-exit-fullscreen').html('退出');
                 return;
             }
-            $screen.addClass('qhv-fullscreen').removeClass('qhv-exit-fullscreen');
+            $screen.addClass('qhv-fullscreen').removeClass('qhv-exit-fullscreen').html('全屏');
         }
 
         // 视频播放的进度
@@ -508,7 +509,7 @@ class Video {
         // video.addEventListener('playing', function() {
         // 	// console.log('playing')
         // }, false);
-        
+
         video.addEventListener('ended', function() {
             $self.trigger('ended');
         }, false);
