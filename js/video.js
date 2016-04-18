@@ -8,7 +8,7 @@ class Video {
         const self = this;
 
         this.wrapper = wrapper;
-        self.options = $.extend({
+        self.options = Object.assign({
             sources: [],
             autoPlay: false,
             width: 0,
@@ -21,6 +21,7 @@ class Video {
         self.firstplay = false;
         self.loading = false;
         this.init();
+
     }
 
     init() {
@@ -109,6 +110,7 @@ class Video {
             const self = this;
             if (self.options.autoPlay) {
                 self.video.play();
+                self.firstplay = true;
             }
 
             self.wrapper.find('.qhv-ctrls').css('opacity', 1);
