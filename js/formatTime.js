@@ -1,29 +1,27 @@
 'use strict'
 
-class FormatTime {
-	constructor() {
-
-	}
-
-	second(time) {
+var FormatTime = function() {
+}
+FormatTime.prototype = {
+	second: function(time = 0) {
 		return this.zero(time);
-	}
+	},
 
-	minute(time) {
+	minute: function(time = 0) {
 		let t = time / 60;
 		return this.zero(t);
-	}
+	},
 
-	hour(time) {
+	hour: function(time = 0) {
 		let t = time / 3600;
 		return this.zero(t);
-	}
+	},
 
-	zero(num) {
+	zero: function(num = 0) {
 		num = parseInt(num);
 		return num * 1 > 9 ? (num + '') : ('0' + num); 
-	}
-	format(time) {
+	},
+	format: function(time = 0) {
 		let hour = 0,
 			minute = 0,
 			second = 0;

@@ -3,39 +3,38 @@ require('../style/video.css');
 require('./customElem');
 let formatTime = require('./formatTime');
 let requestAnimate = require('./requestAnimate');
-class Video {
-    constructor(wrapper, options) {
+
+function Video(wrapper, options) {
+    const self = this;
+
+    this.wrapper = wrapper;
+    self.options = $.extend({
+        sources: [],
+        autoPlay: false,
+        width: 0,
+        height: 0
+    }, options);
+    self.video = null;
+    self.videoId = 'qhv-v-' + +new Date();
+    self.volume = 0.5;
+    self.ctrlsHideTimer = null;
+    self.firstplay = false;
+    self.loading = false;
+    this.init();
+
+}
+Video.prototype = {
+    init: function() {
         const self = this;
 
-        this.wrapper = wrapper;
-        self.options = Object.assign({
-            sources: [],
-            autoPlay: false,
-            width: 0,
-            height: 0
-        }, options);
-        self.video = null;
-        self.videoId = 'qhv-v-' + +new Date();
-        self.volume = 0.5;
-        self.ctrlsHideTimer = null;
-        self.firstplay = false;
-        self.loading = false;
-        this.init();
-
-    }
-
-    init() {
-            const self = this;
-
-            self.renderVideo();
-            self.listener();
-
-        }
-        /**
-         * 渲染video标签
-         * @return {[type]} [description]
-         */
-    renderVideo() {
+        self.renderVideo();
+        self.listener();
+    },
+    /**
+     * 渲染video标签
+     * @return {[type]} [description]
+     */
+    renderVideo: function() {
         let self = this,
             options = self.options,
             source = '',
@@ -48,9 +47,9 @@ class Video {
             source += `<source src="${v}"></source>`;
         });
 
-        if(options.width && options.height) {
-        	videoWH = ` width="${options.width}" height="${options.height}"` ;
-        	boxWH = ` style="width:${options.width}px;height:${options.height}px"` ;
+        if (options.width && options.height) {
+            videoWH = ` width="${options.width}" height="${options.height}"`;
+            boxWH = ` style="width:${options.width}px;height:${options.height}px"`;
         }
 
         video = `<qhvdiv class="qhv-v-box" ${boxWH}>
@@ -93,64 +92,61 @@ class Video {
 
             requestAnimate(self.buffer.bind(self));
         })
-        
+
         self.addListener();
 
-    }
-
-    setDuration(duration = 0) {
-            let self = this;
-            self.wrapper.find('.qhv-duration').html(duration);
+    },
+    setDuration: function(duration = 0) {
+        let self = this;
+        self.wrapper.find('.qhv-duration').html(duration);
+    },
+    /**
+     * 渲染自定义控件
+     * @return {[type]} [description]
+     */
+    renderControls: function() {
+        const self = this;
+        if (self.options.autoPlay) {
+            self.video.play();
+            self.firstplay = true;
         }
-        /**
-         * 渲染自定义控件
-         * @return {[type]} [description]
-         */
-    renderControls() {
-            const self = this;
-            if (self.options.autoPlay) {
-                self.video.play();
-                self.firstplay = true;
-            }
 
-            self.wrapper.find('.qhv-ctrls').css('opacity', 1);
-        }
-        /**
-         * 更新视频播放时长
-         * @param  {Number} time 当前视频播放的时长
-         * @return {[type]}      [description]
-         */
-    updatePlayTime(time) {
+        self.wrapper.find('.qhv-ctrls').css('opacity', 1);
+    },
+    /**
+     * 更新视频播放时长
+     * @param  {Number} time 当前视频播放的时长
+     * @return {[type]}      [description]
+     */
+    updatePlayTime: function(time) {
         const self = this;
         self.wrapper.find('.qhv-current-time').html(formatTime.format(time));
-    }
-
+    },
     /**
      * 更新滑块条位置
      * @param  {Number} l 进度条位置
      * @param  {Object} sliderbar 需要更新滑块的对象
      * @return {[type]}   [description]
      */
-    updateSliderbar(sliderbar, l) {
+    updateSliderbar: function(sliderbar, l) {
 
-            let self = this;
-            let $slider = sliderbar.find('.qhv-slider');
-            $slider.css('left', l);
-            sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
+        let self = this;
+        let $slider = sliderbar.find('.qhv-slider');
+        $slider.css('left', l);
+        sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
 
-        }
-        /**
-         * 更新声音条
-         * @param {Number} h 声音条高度
-         * @return {[type]} [description]
-         */
-    updateVolume(volume, h) {
+    },
+    /**
+     * 更新声音条
+     * @param {Number} h 声音条高度
+     * @return {[type]} [description]
+     */
+    updateVolume: function(volume, h) {
         let self = this;
         volume.height(h);
         self.video.volume = h / 100;
-    }
-
-    buffer() {
+    },
+    buffer: function() {
         let self = this;
         let max = self.wrapper.find('.qhv-p-sliderbar').width();
         let buffered = self.video.buffered;
@@ -171,13 +167,12 @@ class Video {
             return;
         }
         requestAnimate(self.buffer.bind(self));
-    }
-
+    },
     /**
      * 添加自定义控件上的事件
      * @return {[type]} [description]
      */
-    on() {
+    on: function() {
         const self = this;
         const video = self.video;
         const duration = video.duration;
@@ -207,7 +202,7 @@ class Video {
                 let $playpausebtn = self.wrapper.find('.qhv-playpausebtn');
                 self.firstplay = true;
                 if (video.paused) {
-                    video.play();console.log(2)
+                    video.play();
                     $playpausebtn.removeClass('qhv-play-btn').addClass('qhv-pause-btn');
                 } else {
                     video.pause();
@@ -231,17 +226,17 @@ class Video {
                 let $this = $(this);
                 let moveY = (startY - ev.touches[0].screenY) / 4 + $vslider.height();
 
-                moveY = Math.min(100, Math.max(0, moveY));
+                moveY = Math.min($volumebar.height(), Math.max(0, moveY));
                 self.updateVolume($vslider, moveY);
             })
             .on('touchend', '.qhv-overlay', function(ev) {
                 if (ev.target !== this || !self.firstplay) {
                     return;
                 }
-            	clearTimeout(self.ctrlsHideTimer);
+                clearTimeout(self.ctrlsHideTimer);
                 $(self).trigger('controlls.show')
-                if(!video.paused) {
-                	$(self).trigger('controlls.delayhide');
+                if (!video.paused) {
+                    $(self).trigger('controlls.delayhide');
                 }
 
             })
@@ -331,9 +326,8 @@ class Video {
 
             });
 
-    }
-
-    listener() {
+    },
+    listener: function() {
         let self = this;
         let $self = $(self);
         $(self).on('controlls.show', function(ev) {
@@ -346,7 +340,7 @@ class Video {
 
             })
             .on('controlls.delayhide', function() {
-                
+
                 self.ctrlsHideTimer = setTimeout(function() {
                     $self.trigger('controlls.hide');
                     self.ctrlsHideTimer = null;
@@ -363,37 +357,37 @@ class Video {
                 self.ctrlsHideTimer = null;
             })
             .on('loading', function() {
-            	self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').addClass('qhv-loading');
-            	self.loading = true;
+                self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').addClass('qhv-loading');
+                self.loading = true;
             })
             .on('loaded', function() {
-            	self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-loading');
-            	self.loading = false;
+                self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-loading');
+                self.loading = false;
             })
             .on('playing', function() {
-            	$self.trigger('loaded');console.log(3)
+                $self.trigger('loaded');
+                console.log(3)
                 self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-play-btn');
             })
             .on('paused', function() {
-            	$self.trigger('loaded');
+                $self.trigger('loaded');
                 self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn').addClass('qhv-play-btn');
             })
             .on('canplaythrough', function() {
-            	$self.trigger('loaded');
+                $self.trigger('loaded');
             })
             .on('ended', function() {
                 $self.trigger('controlls.show').trigger('paused');
             })
             .on('waiting', function() {
-            	clearTimeout(self.ctrlsHideTimer);
+                clearTimeout(self.ctrlsHideTimer);
                 $self.trigger('controlls.show').trigger('loading');
             });
-    }
-
+    },
     /**
      * 监听video自身的一些事件
      */
-    addListener() {
+    addListener: function() {
 
         const self = this;
         const $self = $(self);
@@ -478,28 +472,28 @@ class Video {
 
         video.addEventListener('waiting', function() {
             $self.trigger('waiting');
-            if(!video.paused) {
-            	video.pause();
-            	setTimeout(function() {
-            		video.play();
-            	}, 2000);
+            if (!video.paused) {
+                video.pause();
+                setTimeout(function() {
+                    video.play();
+                }, 2000);
             }
             // console.log('waiting');
         }, false);
 
         video.addEventListener('canplay', function() {
             // console.log('canplay')
-            if(!self.firstplay) {
-            	$self.trigger('loaded');
+            if (!self.firstplay) {
+                $self.trigger('loaded');
             } else {
-            	if(self.loading) {
-            		$self.trigger('loaded');
-            		if(video.paused) {
+                if (self.loading) {
+                    $self.trigger('loaded');
+                    if (video.paused) {
 
-            		} else {
-            			$self.trigger('controlls.hide')
-            		}
-            	}
+                    } else {
+                        $self.trigger('controlls.hide')
+                    }
+                }
             }
         }, false);
 
@@ -527,14 +521,14 @@ class Video {
         video.addEventListener('play', function() {
             $self.trigger('controlls.delayhide');
         }, false);
-        
+
         video.addEventListener('pause', function() {
             $self.trigger('controlls.show');
             clearTimeout(self.ctrlsHideTimer);
         }, false);
-        
+
         // video.addEventListener('progress', function(ev) {
-        	
+
         // }, false);
 
         // video.addEventListener('durationchange', type, false);
@@ -559,8 +553,8 @@ class Video {
         video.addEventListener('stalled', function() {
             // console.log('stalled')
             // 如果已经点击播放了，再出现stalled则触发waiting事件
-            if(self.firstplay) {
-            	$self.trigger('waiting');
+            if (self.firstplay) {
+                $self.trigger('waiting');
             }
         }, false);
 
@@ -579,7 +573,7 @@ class Video {
         // video.addEventListener('ratechange', type, false);
         // video.addEventListener('volumechange', type, false);
         // video.addEventListener('texttrackchange', type, false);
-        
+
         // video.addEventListener('posterchange', function() {
         //     // console.log('posterchange')
         // }, false);
