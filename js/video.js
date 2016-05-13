@@ -415,9 +415,14 @@ Video.prototype.changeStatus = function() {
                     }
                 }
                 // 如果是正常播放并且控件是显示的，那隔5s后隐藏控件
-                if (lastVideoTime != video.currentTime && time - showTime >= 5000 && self.ctrlsIsShow) {
-                    showTime = time;
-                    self.hideCtrls();
+                if (lastVideoTime != video.currentTime) {
+                    if(self.ctrlsIsShow) {
+                        if(time - showTime >= 5000) {
+                            self.hideCtrls();
+                        }
+                    }  else {
+                        showTime = time;
+                    }
                 }
             }
 

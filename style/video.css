@@ -47,10 +47,9 @@ qhvdiv {
     position: absolute;
     left: 0;
     bottom: 0;
-
     background: rgba(0, 0, 0, .4);
     opacity: 0;
-    font-size: .74em;
+    font-size: .75em;
 }
 
 .qhv-v-box .qhv-ctrls-box .qhv-playpausebtn {
@@ -131,7 +130,7 @@ qhvdiv {
     width: 2em;
     height: 1em;
     position: absolute;
-    top: -0.125em;
+    top: -.0625em;
     left: 0;
     background-color: #fff;
     border-radius: .5em;

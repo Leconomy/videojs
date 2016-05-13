@@ -36,3 +36,41 @@
 	第二次点击播放按钮便不会触发自动全屏。
 
 8. UC浏览器、QQ浏览器都有自己默认的控件UI，完全去不掉，且自定义控件也覆盖不到它们的上面。
+9. 事件play,canplay,canplaythrough时间不会在suspend,stalled,waiting事件触发后触发。
+	如因为网速原因造成视频播放卡顿会触发stalled事件，此时可以添加自定义loading的UI，但是当网速缓冲能正常播放后
+	不会触发play,canplay,canplaythrough任何一个事件去取消loading的状态
+	解决方案：
+	通过requestAnimationFrame去监听状态
+	```javascript
+	if (video.paused) {
+        lastTime = time;
+        showTime = time;
+        self.paused();
+    } else {
+        // 间隔300ms检查一次， 如果当前的播放时间和上次的播放时间不相同那就是正常播放
+        if (time - lastTime >= 300) {
+            lastTime = time;
+            if (lastVideoTime != video.currentTime) {
+                lastVideoTime = video.currentTime;
+                if (self.isEnded) {
+                    self.ended();
+                    return;
+                }
+                self.play();
+            } else {
+                self.waiting();
+            }
+        }
+        // 如果是正常播放并且控件是显示的，那隔5s后隐藏控件
+        if (lastVideoTime != video.currentTime) {
+            if(self.ctrlsIsShow) {
+                if(time - showTime >= 5000) {
+                    self.hideCtrls();
+                }
+            }  else {
+                showTime = time;
+            }
+        }
+    }
+	```
+
