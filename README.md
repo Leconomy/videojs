@@ -2,23 +2,29 @@
 1. 360浏览器里全屏自定义控件显示不出来
 	解决方案：
 	* 修改全屏时video默认的z-index值
+	
 	```javascript
 	:-webkit-full-screen {
 	    z-index: 21474836 !important;
 	}
 	```
+
 	* 全屏时修改自定义控件的z-index值
+
 	```javascript
 	$overlay.add($ctrls).css('zIndex', 2147483647);
 	```
+
 2. 全屏时浏览器默认控件仍显示
 	解决方案:
 	* 添加css样式 [参考文章](https://css-tricks.com/custom-controls-in-html5-video-full-screen/)
+
 	```javascript
 	video::-webkit-media-controls-enclosure {
 	    display: none !important;
 	}
 	```
+
 3. 360浏览器全屏时中间默认显示一个播放暂停按钮
 	解决方案:
 	把自定义的按钮放大盖住它
@@ -41,6 +47,7 @@
 	不会触发play,canplay,canplaythrough任何一个事件去取消loading的状态
 	解决方案：
 	通过requestAnimationFrame去监听状态
+
 	```javascript
 	if (video.paused) {
         lastTime = time;
@@ -73,6 +80,7 @@
         }
     }
 	```
+
 10. ios上点击播放按钮会自动全屏播放。google搜索结果给出的方案是在video上添加一个webkit-playsinline，经过实践证明不好使。
 	同时也有人提出webkit-playsinline属性可以在app里配合Object-c一起使用才能有效。在safari浏览器里无解。
 	[参考文章](http://www.cnblogs.com/moqiutao/p/4830438.html)
@@ -86,5 +94,6 @@
 	> This volume adjustment can be useful, because it allows the user to mute a game, for example, while still listening to music on the computer.
 
 	> On iOS devices, the audio level is always under the user’s physical control. The volume property is not settable in JavaScript. Reading the volume property always returns 1.
+13. ios的搜索app里没有声音,打开其他网站的视频同样没有声音,调节声音大小也无效。这个应该是app的bug
 
 
