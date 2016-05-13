@@ -73,4 +73,18 @@
         }
     }
 	```
+10. ios上点击播放按钮会自动全屏播放。google搜索结果给出的方案是在video上添加一个webkit-playsinline，经过实践证明不好使。
+	同时也有人提出webkit-playsinline属性可以在app里配合Object-c一起使用才能有效。在safari浏览器里无解。
+	[参考文章](http://www.cnblogs.com/moqiutao/p/4830438.html)
+	
+11. ios上自定义全屏按钮，调用webkitEnterFullscreen()进入全屏。在safari浏览器里起作用，在搜索app里会闪一下而无作用。
+	[参考文章](https://developer.apple.com/library/safari/documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/ControllingMediaWithJavaScript/ControllingMediaWithJavaScript.html#//apple_ref/doc/uid/TP40009523-CH3-SW20)
+12. ios上声音只能通过设备去调控，video.volume总是返回1.
+	[参考文章](https://developer.apple.com/library/safari/documentation/AudioVideo/Conceptual/Using_HTML5_Audio_Video/Device-SpecificConsiderations/Device-SpecificConsiderations.html)中的Volume Control in JavaScript。
+	> On the desktop, you can set and read the volume property of an <audio> or <video> element. This allows you to set the element’s audio volume relative to the computer’s current volume setting. A value of 1 plays sound at the normal level. A value of 0 silences the audio. Values between 0 and 1 attenuate the audio.
+
+	> This volume adjustment can be useful, because it allows the user to mute a game, for example, while still listening to music on the computer.
+
+	> On iOS devices, the audio level is always under the user’s physical control. The volume property is not settable in JavaScript. Reading the volume property always returns 1.
+
 

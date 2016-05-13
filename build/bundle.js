@@ -1019,7 +1019,7 @@
 
 	'use strict';
 
-	var requestFullscreenArr = ['requestFullscreen', 'webkitRequestFullscreen', 'mozRequestFullscreen', 'msRequestFullscreen', 'oRequestFullscreen'];
+	var requestFullscreenArr = ['requestFullscreen', 'webkitEnterFullscreen', 'webkitRequestFullscreen', 'mozRequestFullscreen', 'msRequestFullscreen', 'oRequestFullscreen'];
 	var exitFullscreenArr = ['exitFullscreen', 'webkitExitFullscreen', 'mozCancelFullScreen', 'msExitFullscreen', 'oExitFullscreen'];
 	var fullscreenchangeArr = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'msfullscreenchange', 'ofullscreenchange'];
 	var fullscreenElementArr = ['fullscreenElement', 'webkitFullscreenElement', 'mozFullscreenElement', 'msFullscreenElement', 'ofullscreenchange'];

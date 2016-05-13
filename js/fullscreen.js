@@ -1,5 +1,5 @@
 'use strict'
-let requestFullscreenArr = ['requestFullscreen', 'webkitRequestFullscreen', 'mozRequestFullscreen', 'msRequestFullscreen', 'oRequestFullscreen']
+let requestFullscreenArr = ['requestFullscreen', 'webkitEnterFullscreen', 'webkitRequestFullscreen', 'mozRequestFullscreen', 'msRequestFullscreen', 'oRequestFullscreen']
 let exitFullscreenArr = ['exitFullscreen', 'webkitExitFullscreen', 'mozCancelFullScreen', 'msExitFullscreen', 'oExitFullscreen'];
 let fullscreenchangeArr = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'msfullscreenchange', 'ofullscreenchange'];
 let fullscreenElementArr = ['fullscreenElement', 'webkitFullscreenElement', 'mozFullscreenElement', 'msFullscreenElement', 'ofullscreenchange'];
