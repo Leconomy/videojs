@@ -1,11 +1,8 @@
 'use strict'
 require('../style/video.css');
 require('./customElem');
-let ua = navigator.userAgent.toLowerCase(),
-    isAPP = ua.indexOf("mso_app") != -1
 let formatTime = require('./formatTime');
 let requestAnimate = require('./requestAnimate');
-let fullscreen = require('./fullscreen');
 
 function Video(wrapper, options) {
     const self = this;
@@ -22,7 +19,8 @@ function Video(wrapper, options) {
     self.videoId = 'qhv-v-' + +new Date();
     self.volume = 0.5;
     self.firstplay = false;
-    self.isEnded = false;
+    self.loading = false;
+    self.ended = false;
     self.ctrlsIsShow = false;
     this.init();
 
@@ -32,6 +30,7 @@ Video.prototype.init = function() {
     const self = this;
 
     self.renderVideo();
+    self.listener();
 };
 /**
  * 渲染video标签
@@ -213,8 +212,8 @@ Video.prototype.on = function() {
             self.firstplay = true;
 
             // 已经播放结束后再次点击播放按钮即重播
-            if (self.isEnded) {
-                self.isEnded = false;
+            if (self.ended) {
+                self.ended = false;
                 video.currentTime = 0;
                 self.updateSliderbar(self.wrapper.find('.qhv-p-sliderbar').closest('.qhv-sliderbar'), 0);
             }
@@ -255,7 +254,7 @@ Video.prototype.on = function() {
             if (ev.target !== this || !self.firstplay) {
                 return;
             }
-            self.showCtrls();
+            $(self).trigger('controlls.show')
 
         })
         // 点击声音静音按钮
@@ -275,7 +274,40 @@ Video.prototype.on = function() {
             }
 
         })
-        
+        // 点击让wrapper元素全屏而不是让video元素全屏
+        // 从而解决video全屏时native controls仍显示以及自定义控制条不显示的问题的
+        // http://stackoverflow.com/questions/7130397/how-do-i-make-a-div-full-screen
+        // https://css-tricks.com/custom-controls-in-html5-video-full-screen/#comment-561384
+        // 点击全屏按钮
+        .on('touchstart', '.qhv-fullscreen', (ev) => {
+            ev.stopPropagation();
+            if (wrapper.webkitRequestFullscreen) {
+                wrapper.webkitRequestFullscreen();
+            } else if (wrapper.requestFullscreen) {
+                wrapper.requestFullscreen();
+            } else if (wrapper.mozRequestFullscreen) {
+                wrapper.mozRequestFullscreen();
+            } else if (wrapper.msRequestFullscreen) {
+                wrapper.msRequestFullscreen();
+            } else if (wrapper.oRequestFullscreen) {
+                wrapper.oRequestFullscreen();
+            }
+
+        })
+        .on('click', '.qhv-exit-fullscreen', (ev) => {
+            ev.stopPropagation();
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.oExitFullscreen) {
+                document.oExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        })
         // 点击播放进度条
         .on('touchstart', '.qhv-p-sliderbar', function(ev) {
 
@@ -316,70 +348,54 @@ Video.prototype.on = function() {
         });
 
 }
-Video.prototype.showCtrls = function() {
+Video.prototype.listener = function() {
     let self = this;
+    let $self = $(self);
     let $wrapper = self.wrapper;
-
-    let $overlay = $wrapper.find('.qhv-overlay');
-    let $ctrl = $overlay.find('.qhv-ctrls');
-    let $midbtn = $overlay.find('.qhv-overlay-btn');
-    let $volume = $overlay.find('.qhv-volumebar');
-    $midbtn.add($volume).show();
-    $ctrl.css('opacity', 1);
-    self.ctrlsIsShow = true;
-
-}
-
-Video.prototype.hideCtrls = function() {
-    let self = this;
-    let $wrapper = self.wrapper;
-
-    let $overlay = $wrapper.find('.qhv-overlay');
-    let $ctrl = $overlay.find('.qhv-ctrls');
-    let $midbtn = $overlay.find('.qhv-overlay-btn');
-    let $volume = $overlay.find('.qhv-volumebar');
-
-    $midbtn.add($volume).hide();
-    $ctrl.css('opacity', 0);
-    self.ctrlsIsShow = false;
-
-}
-
-Video.prototype.play = function() {
-    let self = this;
-
-    self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-play-btn qhv-loading').addClass('qhv-pause-btn');
-
-}
-Video.prototype.paused = function() {
-    let self = this;
-
-    self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn qhv-loading').addClass('qhv-play-btn');
-}
-Video.prototype.loaded = function() {
-    let self = this;
     let video = self.video;
+    $(self).on('controlls.show', function(ev) {
+            let $overlay = $wrapper.find('.qhv-overlay');
+            let $ctrl = $overlay.find('.qhv-ctrls');
+            let $midbtn = $overlay.find('.qhv-overlay-btn');
+            let $volume = $overlay.find('.qhv-volumebar');
+            $midbtn.add($volume).show();
+            $ctrl.css('opacity', 1);
+            self.ctrlsIsShow = true;
+        })
+        .on('controlls.hide', function() {
+            let $overlay = $wrapper.find('.qhv-overlay');
+            let $ctrl = $overlay.find('.qhv-ctrls');
+            let $midbtn = $overlay.find('.qhv-overlay-btn');
+            let $volume = $overlay.find('.qhv-volumebar');
 
-    if (video.paused) {
-        self.wrapper.find('.qhv-playpausebtn').addClass('qhv-play-btn').removeClass('qhv-loading');
-    } else {
-        self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-loading');
-    }
+            $midbtn.add($volume).hide();
+            $ctrl.css('opacity', 0);
+            self.ctrlsIsShow = false;
+        })
+        .on('play', function() {
+            $wrapper.find('.qhv-playpausebtn').removeClass('qhv-play-btn qhv-loading').addClass('qhv-pause-btn');
+        })
+        .on('paused', function() {
+            $wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn qhv-loading').addClass('qhv-play-btn');
+        })
+        .on('loaded', function() {
+            if (video.paused) {
+                $wrapper.find('.qhv-playpausebtn').addClass('qhv-play-btn').removeClass('qhv-loading');
+            } else {
+                $wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-loading');
+            }
+        })
+        .on('ended', function() {
+            $self.trigger('controlls.show').trigger('paused');
+            self.ended = true;
+        })
+        .on('waiting', function() {
+            $self.trigger('controlls.show');
+            $wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-play-btn qhv-pause-btn').addClass('qhv-loading');
+        });
+
+
 }
-Video.prototype.ended = function() {
-    let self = this;
-
-    self.showCtrls();
-    self.paused();
-    self.isEnded = true;
-}
-Video.prototype.waiting = function() {
-    let self = this;
-
-    self.showCtrls()
-    self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-play-btn qhv-pause-btn').addClass('qhv-loading');
-}
-
 /**
  * 改变播放状态
  * @return {[type]} [description]
@@ -393,35 +409,34 @@ Video.prototype.changeStatus = function() {
             lastTime = 0;
 
         function changeStatus(time) {
-            self.buffer();
             // 如果是暂停状态
             if (video.paused) {
                 lastTime = time;
                 showTime = time;
-                self.paused();
+                $self.trigger('paused');
             } else {
                 // 间隔300ms检查一次， 如果当前的播放时间和上次的播放时间不相同那就是正常播放
                 if (time - lastTime >= 300) {
                     lastTime = time;
                     if (lastVideoTime != video.currentTime) {
                         lastVideoTime = video.currentTime;
-                        if (self.isEnded) {
-                            self.ended();
+                        if (self.ended) {
+                            $self.trigger('ended')
                             return;
                         }
-                        self.play();
+                        $self.trigger('play');
                     } else {
-                        self.waiting();
+                        $self.trigger('waiting');
                     }
                 }
                 // 如果是正常播放并且控件是显示的，那隔5s后隐藏控件
                 if (lastVideoTime != video.currentTime && time - showTime >= 5000 && self.ctrlsIsShow) {
                     showTime = time;
-                    self.hideCtrls();
+                    $self.trigger('controlls.hide')
                 }
             }
 
-            
+            self.buffer();
 
             requestAnimate(changeStatus);
         }
@@ -443,8 +458,6 @@ Video.prototype.addListener = function() {
 
     const $screen = self.wrapper.find('.qhv-screen');
 
-    let fullscreenElem = video;
-
     function toggleScreen(type) {
         if (type === 1) {
             $overlay.add($ctrls).css('zIndex', 2147483647);
@@ -458,16 +471,63 @@ Video.prototype.addListener = function() {
         self.buffer();
     }
 
-    if(isAPP) {
-        fullscreenElem = wrapper;
-    }
 
-    fullscreen(self.wrapper, 'click', '.qhv-screen', fullscreenElem, toggleScreen);
+    wrapper.addEventListener('fullscreenchange', (ev) => {
+
+        if (document.fullscreenElement) {
+            toggleScreen(1);
+        } else {
+            toggleScreen(0);
+        }
+
+    }, false);
+
+    wrapper.addEventListener('webkitfullscreenchange', function(ev) {
+
+        if (document.webkitFullscreenElement) {
+            toggleScreen(1);
+        } else {
+            toggleScreen(0);
+        }
+
+    }, false);
+
+    wrapper.addEventListener('msfullscreenchange', (ev) => {
+
+        if (document.msFullscreenElement) {
+            toggleScreen(1);
+        } else {
+            toggleScreen(0);
+        }
+
+    }, false);
+
+    wrapper.addEventListener('mozfullscreenchange', (ev) => {
+
+        if (document.mozFullscreenElement) {
+            toggleScreen(1);
+        } else {
+            toggleScreen(0);
+        }
+
+    }, false);
+
+    wrapper.addEventListener('ofullscreenchange', (ev) => {
+
+        if (document.oFullscreenElement) {
+            toggleScreen(1);
+        } else {
+            toggleScreen(0);
+        }
+
+    }, false);
+
 
     // 视频播放的进度
     video.addEventListener('timeupdate', function(ev) {
         // console.log('timeupdate')
         const max = $progressbar.width() - $sliderbar.width();
+        // $self.trigger('playing');
         self.updatePlayTime(video.currentTime);
         self.updateSliderbar($progressbar, video.currentTime / video.duration * max);
 
@@ -475,18 +535,17 @@ Video.prototype.addListener = function() {
 
 
     video.addEventListener('loadstart', function() {
-        self.waiting();
-        
+        $self.trigger('waiting');
     }, false);
 
     video.addEventListener('waiting', function() {
-        self.waiting();
+        $self.trigger('waiting');
         console.log('waiting');
     }, false);
 
     video.addEventListener('canplay', function() {
         console.log('canplay')
-        self.loaded();
+        $self.trigger('loaded');
     }, false);
 
     video.addEventListener('canplaythrough', function() {
@@ -498,18 +557,17 @@ Video.prototype.addListener = function() {
     }, false);
 
     video.addEventListener('ended', function() {
-        self.ended();
+        $self.trigger('ended');
     }, false);
 
     video.addEventListener('seeking', function() {
         console.log('seeking')
-        self.waiting();
+        $self.trigger('waiting');
     }, false);
 
     video.addEventListener('seeked', function() {
         console.log('seeked')
-        video.paused ? self.paused() : self.play();
-
+        video.paused ? $self.trigger('paused') : $self.trigger('play');
     }, false);
 
     video.addEventListener('play', function() {
@@ -517,7 +575,7 @@ Video.prototype.addListener = function() {
     }, false);
 
     video.addEventListener('pause', function() {
-        self.showCtrls();
+        $self.trigger('controlls.show');
     }, false);
 
     video.addEventListener('progress', function(ev) {
@@ -534,6 +592,7 @@ Video.prototype.addListener = function() {
     // 不能触发waiting事件，因为有时候播放正常，缓冲加载足够播放的数据，但是仍然会出现suspend的情况
     video.addEventListener('suspend', function() {
         console.log('suspend')
+            // $self.trigger('waiting');
     }, false);
 
     video.addEventListener('abort', function() {
@@ -549,7 +608,7 @@ Video.prototype.addListener = function() {
         console.log('stalled')
             // 如果已经点击播放了，再出现stalled则触发waiting事件
         if (self.firstplay) {
-            self.waiting();
+            $self.trigger('waiting');
         }
     }, false);
 

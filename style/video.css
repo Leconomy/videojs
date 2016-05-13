@@ -2,6 +2,10 @@ qhvdiv {
     display: block;
 }
 
+:-webkit-full-screen {
+    z-index: 21474836 !important;
+}
+/*全屏时隐藏控件  https://css-tricks.com/custom-controls-in-html5-video-full-screen/ */
 .qhv-v-box video::-webkit-media-controls-enclosure {
     display: none !important;
 }
@@ -23,7 +27,7 @@ qhvdiv {
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 2147483648;
+    z-index: 1000;
 }
 
 .qhv-v-box .qhv-ctrls-box {
@@ -31,6 +35,7 @@ qhvdiv {
     height: 100%;
     display: -webkit-box;
     -webkit-box-flex: 1;
+    line-height: 1em;
 }
 
 .qhv-v-box .qhv-ctrls {
@@ -42,7 +47,7 @@ qhvdiv {
     position: absolute;
     left: 0;
     bottom: 0;
-    z-index: 2147483648;
+
     background: rgba(0, 0, 0, .4);
     opacity: 0;
     font-size: .74em;
@@ -86,7 +91,7 @@ qhvdiv {
 .qhv-v-box .qhv-progressbar {
     display: -webkit-box;
     -webkit-box-flex: 1;
-    padding-left: .625em;
+    padding-left: .833333334em;
 }
 
 .qhv-v-box .qhv-slider-bg,
@@ -114,7 +119,7 @@ qhvdiv {
     height: .625em;
     padding-top: .25em;
     position: relative;
-    border: .0625em solid #aaa;
+    border: 1px solid #aaa;
     border-radius: .5em;
     background: #333;
     margin-top: .0625em;
@@ -211,6 +216,14 @@ qhvdiv {
     box-sizing: border-box;
     -webkit-box-sizing: border-box;
 
+}
+
+
+.qhv-full-screen .qhv-overlay-btn {
+    width: 5em;
+    height: 5em;
+    margin-top: -2.5em;
+    margin-left: -2.5em;
 }
 
 .qhv-overlay-btn .qhv-playpausebtn {
