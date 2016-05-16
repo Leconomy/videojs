@@ -37,7 +37,9 @@ qhvdiv {
     -webkit-box-flex: 1;
     line-height: 1em;
 }
-
+.qhv-ios .qhv-v-box .qhv-ctrls, .qhv-ios .qhv-v-box .qhv-volumebar {
+    display: none;
+}
 .qhv-v-box .qhv-ctrls {
     width: 100%;
     height: 2.5em;

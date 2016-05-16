@@ -1,8 +1,11 @@
 'use strict'
 require('../style/video.css');
 require('./customElem');
+
 let ua = navigator.userAgent.toLowerCase(),
-    isAPP = ua.indexOf("mso_app") != -1
+    isIOS = /iphone|ipad/.test(ua),
+    isAPP = !isIOS && ua.indexOf("mso_app") != -1;
+
 let formatTime = require('./formatTime');
 let requestAnimate = require('./requestAnimate');
 let fullscreen = require('./fullscreen');
@@ -24,6 +27,7 @@ function Video(wrapper, options) {
     self.firstplay = false;
     self.isEnded = false;
     self.ctrlsIsShow = false;
+
     this.init();
 
 }
@@ -32,6 +36,131 @@ Video.prototype.init = function() {
     const self = this;
 
     self.renderVideo();
+};
+/**
+ * 拼接video的sources的字符串
+ * @param  {Array} sourcesArr 配置的sources的数组
+ * @return {String}            sources的字符串
+ */
+Video.prototype.pureSources = function(sourcesArr) {
+    let sources = '';
+    sourcesArr.forEach(function(v) {
+        sources += `<source src="${v}"></source>`;
+    });
+    return sources;
+};
+/**
+ * 拼接video高宽的字符串
+ * @param  {Number} width  高
+ * @param  {Number} height 宽
+ * @return {String}        高宽拼接后的字符串
+ */
+Video.prototype.pureVideoWH = function(width, height) {
+
+    if (width && height) {
+        return ` width="${width}" height="${height}"`;
+    }
+
+    return '';
+};
+/**
+ * 拼接v-box高宽的字符串
+ * @param  {Number} width  高
+ * @param  {Number} height 宽
+ * @return {String}        高宽拼接后的字符串
+ */
+Video.prototype.pureBoxWH = function(width, height) {
+    if (width && height) {
+        return ` style="width:${width}px;height:${height}px"`;
+    }
+    return '';
+};
+/**
+ * 拼接video的poster字符串
+ * @param  {String} poster poster的地址
+ * @return {String}        拼接后的字符串
+ */
+Video.prototype.purePoster = function(poster) {
+    if (poster) {
+        return `poster=${poster}`;
+    }
+    return '';
+};
+/**
+ * 拼接自定义控制条字符串
+ * @param  {Boolean} isIOS  是不是ios系统
+ * @return {String}        拼接后的字符串
+ */
+Video.prototype.pureCtrls = function(isIOS) {
+    if (!isIOS) {
+        return `<qhvdiv class="qhv-ctrls">
+                    <qhvdiv class="qhv-ctrls-box">
+                        <qhvdiv class="qhv-ctrl qhv-playpausebtn qhv-play-btn"></qhvdiv>
+                        <qhvdiv class="qhv-ctrl qhv-progressbar">
+                            <qhvdiv class="qhv-sliderbar qhv-p-sliderbar">
+                                <qhvdiv class="qhv-slider-buffer"></qhvdiv>
+                                <qhvdiv class="qhv-slider-bg"></qhvdiv>
+                                <qhvdiv class="qhv-slider qhv-p-slider"></qhvdiv>
+                            </qhvdiv>
+                            <qhvdiv class="qhv-current-time">00:00</qhvdiv>
+                            <qhvdiv class="qhv-sep">/</qhvdiv>
+                            <qhvdiv class="qhv-duration">00:00</qhvdiv>
+                        </qhvdiv>
+                        <qhvdiv class="qhv-ctrl qhv-screen qhv-fullscreen">全屏</qhvdiv>
+                    </qhvdiv>
+                </qhvdiv>`;
+    }
+
+    return '';
+};
+/**
+ * 拼接自定义声音条字符串
+ * @param  {Boolean} isIOS  是不是ios系统
+ * @return {String}        拼接后的字符串
+ */
+Video.prototype.pureVolumebar = function(isIOS) {
+    if (!isIOS) {
+        return `<qhvdiv class="qhv-volumebar">
+                    <qhvdiv class="qhv-v-sliderbar">
+                        <qhvdiv class="qhv-slider-bg"></qhvdiv>
+                        <qhvdiv class="qhv-v-slider"></qhvdiv>
+                    </qhvdiv>
+                    <qhvdiv class="qhv-volume-icon"></qhvdiv>
+                </qhvdiv>`;
+    }
+    return '';
+};
+/**
+ * 处理ios系统，如果是ios添加qhv-ios值
+ * @param  {Boolean} isIOS  是不是ios系统       
+ */
+Video.prototype.handleIOS = function(isIOS) {
+    let _self = this;
+    isIOS ? _self.wrapper.addClass('qhv-ios') : '';
+};
+/**
+ * 拼接video字符串
+ * @param  {String} videoId   video标签的id值
+ * @param  {String} src       video标签src值
+ * @param  {String} source    video标签下的source
+ * @param  {String} videoWH   video标签的高宽
+ * @param  {String} boxWH     v-box的高宽
+ * @param  {String} poster    video标签的poster
+ * @param  {String} ctrls     自定义控制条
+ * @param  {String} volumebar 自定义声音条
+ * @return {String}           拼接后的字符串
+ */
+Video.prototype.pureVideo = function(videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar) {
+    return `<qhvdiv class="qhv-v-box" ${boxWH}>
+                <video id="${videoId}" src="${src}" ${poster} ${videoWH}>${source}您的浏览器不支持video标签</video>
+                <qhvdiv class="qhv-overlay">
+                    ${ctrls}
+                    <qhvdiv class="qhv-overlay-btn">
+                        <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> 
+                    </qhvdiv>
+                    ${volumebar}
+                </qhvdiv>
+            </qhvdiv>`;
 };
 /**
  * 渲染video标签
@@ -45,115 +174,86 @@ Video.prototype.renderVideo = function() {
         videoWH = 'width="100%"',
         boxWH = '',
         poster = '',
+        ctrls = '',
+        volumebar = '',
+        isios = isIOS,
         src = options.sources[0],
         autoPlay = options.autoPlay ? ' autoPlay' : '';
 
-    options.sources.forEach(function(v, i) {
-        source += `<source src="${v}"></source>`;
-    });
+    self.handleIOS(isios);
 
-    if (options.width && options.height) {
-        videoWH = ` width="${options.width}" height="${options.height}"`;
-        boxWH = ` style="width:${options.width}px;height:${options.height}px"`;
-    }
-
-    if (options.poster) {
-        poster = `poster=${options.poster}`;
-    }
-
-    video = `<qhvdiv class="qhv-v-box" ${boxWH}>
-                    <video id="${self.videoId}" src="${src}" ${poster} ${videoWH}>${source}您的浏览器不支持video标签</video>
-                    <qhvdiv class="qhv-overlay">
-                        <qhvdiv class="qhv-ctrls">
-                            <qhvdiv class="qhv-ctrls-box">
-                                <qhvdiv class="qhv-ctrl qhv-playpausebtn qhv-play-btn"></qhvdiv>
-                                <qhvdiv class="qhv-ctrl qhv-progressbar">
-                                    <qhvdiv class="qhv-sliderbar qhv-p-sliderbar">
-                                        <qhvdiv class="qhv-slider-buffer"></qhvdiv>
-                                        <qhvdiv class="qhv-slider-bg"></qhvdiv>
-                                        <qhvdiv class="qhv-slider qhv-p-slider"></qhvdiv>
-                                    </qhvdiv>
-                                    <qhvdiv class="qhv-current-time">00:00</qhvdiv>
-                                    <qhvdiv class="qhv-sep">/</qhvdiv>
-                                    <qhvdiv class="qhv-duration">00:00</qhvdiv>
-                                </qhvdiv>
-                                <qhvdiv class="qhv-ctrl qhv-screen qhv-fullscreen">全屏</qhvdiv>
-                            </qhvdiv>
-                        </qhvdiv>
-                        <qhvdiv class="qhv-overlay-btn">
-                            <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> 
-                        </qhvdiv>
-                        <qhvdiv class="qhv-volumebar">
-                            <qhvdiv class="qhv-v-sliderbar">
-                                <qhvdiv class="qhv-slider-bg"></qhvdiv>
-                                <qhvdiv class="qhv-v-slider"></qhvdiv>
-                            </qhvdiv>
-                            <qhvdiv class="qhv-volume-icon"></qhvdiv>
-                        </qhvdiv>
-                    </qhvdiv>
-                </qhvdiv>`;
+    source = self.pureSources(options.sources);
+    videoWH = self.pureVideoWH(options.width, options.height);
+    boxWH = self.pureBoxWH(options.width, options.height);
+    poster = self.purePoster(options.poster);
+    ctrls = self.pureCtrls(isios);
+    volumebar = self.pureVolumebar(isios);
+    video = self.pureVideo(self.videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar);
 
     $(video).appendTo(self.wrapper);
+
     self.video = document.getElementById(self.videoId);
+
     $(self.video).ready(function() {
         self.renderControls();
         self.video.volume = self.volume;
-    })
+    });
 
     self.addListener();
 
-}
-Video.prototype.setDuration = function(duration = 0) {
-        let self = this;
-        self.wrapper.find('.qhv-duration').html(duration);
-    }
-    /**
-     * 渲染自定义控件
-     * @return {[type]} [description]
-     */
-Video.prototype.renderControls = function() {
-        const self = this;
-        if (self.options.autoPlay) {
-            self.video.play();
-            self.firstplay = true;
-        }
+};
 
-        self.wrapper.find('.qhv-ctrls').css('opacity', 1);
+Video.prototype.setDuration = function(duration = 0) {
+    let self = this;
+    self.wrapper.find('.qhv-duration').html(duration);
+};
+/**
+ * 渲染自定义控件
+ * @return {[type]} [description]
+ */
+Video.prototype.renderControls = function() {
+    const self = this;
+    if (self.options.autoPlay) {
+        self.video.play();
+        self.firstplay = true;
     }
-    /**
-     * 更新视频播放时长
-     * @param  {Number} time 当前视频播放的时长
-     * @return {[type]}      [description]
-     */
+
+    self.wrapper.find('.qhv-ctrls').css('opacity', 1);
+};
+/**
+ * 更新视频播放时长
+ * @param  {Number} time 当前视频播放的时长
+ * @return {[type]}      [description]
+ */
 Video.prototype.updatePlayTime = function(time) {
-        const self = this;
-        self.wrapper.find('.qhv-current-time').html(formatTime.format(time));
-    }
-    /**
-     * 更新滑块条位置
-     * @param  {Number} l 进度条位置
-     * @param  {Object} sliderbar 需要更新滑块的对象
-     * @return {[type]}   [description]
-     */
+    const self = this;
+    self.wrapper.find('.qhv-current-time').html(formatTime.format(time));
+};
+/**
+ * 更新滑块条位置
+ * @param  {Number} l 进度条位置
+ * @param  {Object} sliderbar 需要更新滑块的对象
+ * @return {[type]}   [description]
+ */
 Video.prototype.updateSliderbar = function(sliderbar, l) {
 
-        let self = this;
-        let $slider = sliderbar.find('.qhv-slider');
-        $slider.css('left', l);
-        sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
+    let self = this;
+    let $slider = sliderbar.find('.qhv-slider');
+    $slider.css('left', l);
+    sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
 
-    }
-    /**
-     * 更新声音条
-     * @param {Number} h 声音条高度
-     * @return {[type]} [description]
-     */
+};
+/**
+ * 更新声音条
+ * @param {Number} h 声音条高度
+ * @return {[type]} [description]
+ */
 Video.prototype.updateVolume = function(volume, h) {
     let self = this;
     volume.height(h);
     self.video.volume = h / 100;
     self.volume = h / 100;
-}
+};
 
 
 Video.prototype.buffer = function() {
@@ -173,10 +273,7 @@ Video.prototype.buffer = function() {
         bufferedDuration += end - start;
     }
     self.wrapper.find('.qhv-slider-buffer').width(bufferedDuration / duration * max);
-    // if (bufferedDuration === duration) {
-    //     return;
-    // }
-}
+};
 /**
  * 添加自定义控件上的事件
  * @return {[type]} [description]
@@ -275,9 +372,9 @@ Video.prototype.on = function() {
             }
 
         })
-        
-        // 点击播放进度条
-        .on('touchstart', '.qhv-p-sliderbar', function(ev) {
+
+    // 点击播放进度条
+    .on('touchstart', '.qhv-p-sliderbar', function(ev) {
 
             const barW = $progressbar.width();
             const sliderW = $slider.width();
@@ -315,7 +412,7 @@ Video.prototype.on = function() {
 
         });
 
-}
+};
 Video.prototype.showCtrls = function() {
     let self = this;
     let $wrapper = self.wrapper;
@@ -328,7 +425,7 @@ Video.prototype.showCtrls = function() {
     $ctrl.css('opacity', 1);
     self.ctrlsIsShow = true;
 
-}
+};
 
 Video.prototype.hideCtrls = function() {
     let self = this;
@@ -343,19 +440,19 @@ Video.prototype.hideCtrls = function() {
     $ctrl.css('opacity', 0);
     self.ctrlsIsShow = false;
 
-}
+};
 
 Video.prototype.play = function() {
     let self = this;
 
     self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-play-btn qhv-loading').addClass('qhv-pause-btn');
 
-}
+};
 Video.prototype.paused = function() {
     let self = this;
 
     self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn qhv-loading').addClass('qhv-play-btn');
-}
+};
 Video.prototype.loaded = function() {
     let self = this;
     let video = self.video;
@@ -365,76 +462,75 @@ Video.prototype.loaded = function() {
     } else {
         self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-loading');
     }
-}
+};
 Video.prototype.ended = function() {
     let self = this;
 
     self.showCtrls();
     self.paused();
     self.isEnded = true;
-}
+};
 Video.prototype.waiting = function() {
     let self = this;
 
     self.showCtrls()
     self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-play-btn qhv-pause-btn').addClass('qhv-loading');
-}
+};
 
 /**
  * 改变播放状态
  * @return {[type]} [description]
  */
 Video.prototype.changeStatus = function() {
-        let self = this,
-            $self = $(self),
-            video = self.video,
-            lastVideoTime = video.currentTime,
-            showTime = 0,
-            lastTime = 0;
+    let self = this,
+        $self = $(self),
+        video = self.video,
+        lastVideoTime = video.currentTime,
+        showTime = 0,
+        lastTime = 0;
 
-        function changeStatus(time) {
-            self.buffer();
-            // 如果是暂停状态
-            if (video.paused) {
+    function changeStatus(time) {
+        self.buffer();
+        // 如果是暂停状态
+        if (video.paused) {
+            lastTime = time;
+            showTime = time;
+            self.paused();
+        } else {
+            // 间隔300ms检查一次， 如果当前的播放时间和上次的播放时间不相同那就是正常播放
+            if (time - lastTime >= 300) {
                 lastTime = time;
-                showTime = time;
-                self.paused();
-            } else {
-                // 间隔300ms检查一次， 如果当前的播放时间和上次的播放时间不相同那就是正常播放
-                if (time - lastTime >= 300) {
-                    lastTime = time;
-                    if (lastVideoTime != video.currentTime) {
-                        lastVideoTime = video.currentTime;
-                        if (self.isEnded) {
-                            self.ended();
-                            return;
-                        }
-                        self.play();
-                    } else {
-                        self.waiting();
-                    }
-                }
-                // 如果是正常播放并且控件是显示的，那隔5s后隐藏控件
                 if (lastVideoTime != video.currentTime) {
-                    if(self.ctrlsIsShow) {
-                        if(time - showTime >= 5000) {
-                            self.hideCtrls();
-                        }
-                    }  else {
-                        showTime = time;
+                    lastVideoTime = video.currentTime;
+                    if (self.isEnded) {
+                        self.ended();
+                        return;
                     }
+                    self.play();
+                } else {
+                    self.waiting();
                 }
             }
-
-            
-
-            requestAnimate(changeStatus);
+            // 如果是正常播放并且控件是显示的，那隔5s后隐藏控件
+            if (lastVideoTime != video.currentTime) {
+                if (self.ctrlsIsShow) {
+                    if (time - showTime >= 5000) {
+                        self.hideCtrls();
+                    }
+                } else {
+                    showTime = time;
+                }
+            }
         }
+
         requestAnimate(changeStatus);
     }
-    /**
-     * 监听video自身的一些事件
-     */
+
+    requestAnimate(changeStatus);
+};
+/**
+ * 监听video自身的一些事件
+ */
 Video.prototype.addListener = function() {
 
     const self = this;
@@ -463,7 +559,7 @@ Video.prototype.addListener = function() {
         self.buffer();
     }
 
-    if(isAPP) {
+    if (isAPP) {
         fullscreenElem = wrapper;
     }
 
@@ -481,7 +577,7 @@ Video.prototype.addListener = function() {
 
     video.addEventListener('loadstart', function() {
         self.waiting();
-        
+
     }, false);
 
     video.addEventListener('waiting', function() {
@@ -567,14 +663,7 @@ Video.prototype.addListener = function() {
         self.changeStatus();
     }, false);
 
-    // video.addEventListener('ratechange', type, false);
-    // video.addEventListener('volumechange', type, false);
-    // video.addEventListener('texttrackchange', type, false);
-
-    // video.addEventListener('posterchange', function() {
-    //     // console.log('posterchange')
-    // }, false);
-}
+};
 
 
 window.Video = Video;

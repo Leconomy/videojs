@@ -48,8 +48,11 @@
 
 	__webpack_require__(1);
 	__webpack_require__(6);
+
 	var ua = navigator.userAgent.toLowerCase(),
-	    isAPP = ua.indexOf("mso_app") != -1;
+	    isIOS = /iphone|ipad/.test(ua),
+	    isAPP = !isIOS && ua.indexOf("mso_app") != -1;
+
 	var formatTime = __webpack_require__(7);
 	var requestAnimate = __webpack_require__(8);
 	var fullscreen = __webpack_require__(9);
@@ -71,6 +74,7 @@
 	    self.firstplay = false;
 	    self.isEnded = false;
 	    self.ctrlsIsShow = false;
+
 	    this.init();
 	}
 
@@ -78,6 +82,101 @@
 	    var self = this;
 
 	    self.renderVideo();
+	};
+	/**
+	 * 拼接video的sources的字符串
+	 * @param  {Array} sourcesArr 配置的sources的数组
+	 * @return {String}            sources的字符串
+	 */
+	Video.prototype.pureSources = function (sourcesArr) {
+	    var sources = '';
+	    sourcesArr.forEach(function (v) {
+	        sources += '<source src="' + v + '"></source>';
+	    });
+	    return sources;
+	};
+	/**
+	 * 拼接video高宽的字符串
+	 * @param  {Number} width  高
+	 * @param  {Number} height 宽
+	 * @return {String}        高宽拼接后的字符串
+	 */
+	Video.prototype.pureVideoWH = function (width, height) {
+
+	    if (width && height) {
+	        return ' width="' + width + '" height="' + height + '"';
+	    }
+
+	    return '';
+	};
+	/**
+	 * 拼接v-box高宽的字符串
+	 * @param  {Number} width  高
+	 * @param  {Number} height 宽
+	 * @return {String}        高宽拼接后的字符串
+	 */
+	Video.prototype.pureBoxWH = function (width, height) {
+	    if (width && height) {
+	        return ' style="width:' + width + 'px;height:' + height + 'px"';
+	    }
+	    return '';
+	};
+	/**
+	 * 拼接video的poster字符串
+	 * @param  {String} poster poster的地址
+	 * @return {String}        拼接后的字符串
+	 */
+	Video.prototype.purePoster = function (poster) {
+	    if (poster) {
+	        return 'poster=' + poster;
+	    }
+	    return '';
+	};
+	/**
+	 * 拼接自定义控制条字符串
+	 * @param  {Boolean} isIOS  是不是ios系统
+	 * @return {String}        拼接后的字符串
+	 */
+	Video.prototype.pureCtrls = function (isIOS) {
+	    if (!isIOS) {
+	        return '<qhvdiv class="qhv-ctrls">\n                    <qhvdiv class="qhv-ctrls-box">\n                        <qhvdiv class="qhv-ctrl qhv-playpausebtn qhv-play-btn"></qhvdiv>\n                        <qhvdiv class="qhv-ctrl qhv-progressbar">\n                            <qhvdiv class="qhv-sliderbar qhv-p-sliderbar">\n                                <qhvdiv class="qhv-slider-buffer"></qhvdiv>\n                                <qhvdiv class="qhv-slider-bg"></qhvdiv>\n                                <qhvdiv class="qhv-slider qhv-p-slider"></qhvdiv>\n                            </qhvdiv>\n                            <qhvdiv class="qhv-current-time">00:00</qhvdiv>\n                            <qhvdiv class="qhv-sep">/</qhvdiv>\n                            <qhvdiv class="qhv-duration">00:00</qhvdiv>\n                        </qhvdiv>\n                        <qhvdiv class="qhv-ctrl qhv-screen qhv-fullscreen">全屏</qhvdiv>\n                    </qhvdiv>\n                </qhvdiv>';
+	    }
+
+	    return '';
+	};
+	/**
+	 * 拼接自定义声音条字符串
+	 * @param  {Boolean} isIOS  是不是ios系统
+	 * @return {String}        拼接后的字符串
+	 */
+	Video.prototype.pureVolumebar = function (isIOS) {
+	    if (!isIOS) {
+	        return '<qhvdiv class="qhv-volumebar">\n                    <qhvdiv class="qhv-v-sliderbar">\n                        <qhvdiv class="qhv-slider-bg"></qhvdiv>\n                        <qhvdiv class="qhv-v-slider"></qhvdiv>\n                    </qhvdiv>\n                    <qhvdiv class="qhv-volume-icon"></qhvdiv>\n                </qhvdiv>';
+	    }
+	    return '';
+	};
+	/**
+	 * 处理ios系统，如果是ios添加qhv-ios值
+	 * @param  {Boolean} isIOS  是不是ios系统       
+	 */
+	Video.prototype.handleIOS = function (isIOS) {
+	    var _self = this;
+	    isIOS ? _self.wrapper.addClass('qhv-ios') : '';
+	};
+	/**
+	 * 拼接video字符串
+	 * @param  {String} videoId   video标签的id值
+	 * @param  {String} src       video标签src值
+	 * @param  {String} source    video标签下的source
+	 * @param  {String} videoWH   video标签的高宽
+	 * @param  {String} boxWH     v-box的高宽
+	 * @param  {String} poster    video标签的poster
+	 * @param  {String} ctrls     自定义控制条
+	 * @param  {String} volumebar 自定义声音条
+	 * @return {String}           拼接后的字符串
+	 */
+	Video.prototype.pureVideo = function (videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar) {
+	    return '<qhvdiv class="qhv-v-box" ' + boxWH + '>\n                <video id="' + videoId + '" src="' + src + '" ' + poster + ' ' + videoWH + '>' + source + '您的浏览器不支持video标签</video>\n                <qhvdiv class="qhv-overlay">\n                    ' + ctrls + '\n                    <qhvdiv class="qhv-overlay-btn">\n                        <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> \n                    </qhvdiv>\n                    ' + volumebar + '\n                </qhvdiv>\n            </qhvdiv>';
 	};
 	/**
 	 * 渲染video标签
@@ -91,26 +190,26 @@
 	        videoWH = 'width="100%"',
 	        boxWH = '',
 	        poster = '',
+	        ctrls = '',
+	        volumebar = '',
+	        isios = isIOS,
 	        src = options.sources[0],
 	        autoPlay = options.autoPlay ? ' autoPlay' : '';
 
-	    options.sources.forEach(function (v, i) {
-	        source += '<source src="' + v + '"></source>';
-	    });
+	    self.handleIOS(isios);
 
-	    if (options.width && options.height) {
-	        videoWH = ' width="' + options.width + '" height="' + options.height + '"';
-	        boxWH = ' style="width:' + options.width + 'px;height:' + options.height + 'px"';
-	    }
-
-	    if (options.poster) {
-	        poster = 'poster=' + options.poster;
-	    }
-
-	    video = '<qhvdiv class="qhv-v-box" ' + boxWH + '>\n                    <video id="' + self.videoId + '" src="' + src + '" ' + poster + ' ' + videoWH + '>' + source + '您的浏览器不支持video标签</video>\n                    <qhvdiv class="qhv-overlay">\n                        <qhvdiv class="qhv-ctrls">\n                            <qhvdiv class="qhv-ctrls-box">\n                                <qhvdiv class="qhv-ctrl qhv-playpausebtn qhv-play-btn"></qhvdiv>\n                                <qhvdiv class="qhv-ctrl qhv-progressbar">\n                                    <qhvdiv class="qhv-sliderbar qhv-p-sliderbar">\n                                        <qhvdiv class="qhv-slider-buffer"></qhvdiv>\n                                        <qhvdiv class="qhv-slider-bg"></qhvdiv>\n                                        <qhvdiv class="qhv-slider qhv-p-slider"></qhvdiv>\n                                    </qhvdiv>\n                                    <qhvdiv class="qhv-current-time">00:00</qhvdiv>\n                                    <qhvdiv class="qhv-sep">/</qhvdiv>\n                                    <qhvdiv class="qhv-duration">00:00</qhvdiv>\n                                </qhvdiv>\n                                <qhvdiv class="qhv-ctrl qhv-screen qhv-fullscreen">全屏</qhvdiv>\n                            </qhvdiv>\n                        </qhvdiv>\n                        <qhvdiv class="qhv-overlay-btn">\n                            <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> \n                        </qhvdiv>\n                        <qhvdiv class="qhv-volumebar">\n                            <qhvdiv class="qhv-v-sliderbar">\n                                <qhvdiv class="qhv-slider-bg"></qhvdiv>\n                                <qhvdiv class="qhv-v-slider"></qhvdiv>\n                            </qhvdiv>\n                            <qhvdiv class="qhv-volume-icon"></qhvdiv>\n                        </qhvdiv>\n                    </qhvdiv>\n                </qhvdiv>';
+	    source = self.pureSources(options.sources);
+	    videoWH = self.pureVideoWH(options.width, options.height);
+	    boxWH = self.pureBoxWH(options.width, options.height);
+	    poster = self.purePoster(options.poster);
+	    ctrls = self.pureCtrls(isios);
+	    volumebar = self.pureVolumebar(isios);
+	    video = self.pureVideo(self.videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar);
 
 	    $(video).appendTo(self.wrapper);
+
 	    self.video = document.getElementById(self.videoId);
+
 	    $(self.video).ready(function () {
 	        self.renderControls();
 	        self.video.volume = self.volume;
@@ -118,6 +217,7 @@
 
 	    self.addListener();
 	};
+
 	Video.prototype.setDuration = function () {
 	    var duration = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
 
@@ -189,9 +289,6 @@
 	        bufferedDuration += end - start;
 	    }
 	    self.wrapper.find('.qhv-slider-buffer').width(bufferedDuration / duration * max);
-	    // if (bufferedDuration === duration) {
-	    //     return;
-	    // }
 	};
 	/**
 	 * 添加自定义控件上的事件
@@ -427,6 +524,7 @@
 
 	        requestAnimate(changeStatus);
 	    }
+
 	    requestAnimate(changeStatus);
 	};
 	/**
@@ -559,14 +657,6 @@
 	        self.on();
 	        self.changeStatus();
 	    }, false);
-
-	    // video.addEventListener('ratechange', type, false);
-	    // video.addEventListener('volumechange', type, false);
-	    // video.addEventListener('texttrackchange', type, false);
-
-	    // video.addEventListener('posterchange', function() {
-	    //     // console.log('posterchange')
-	    // }, false);
 	};
 
 	window.Video = Video;
@@ -606,7 +696,7 @@
 
 
 	// module
-	exports.push([module.id, "qhvdiv {\r\n    display: block;\r\n}\r\n\r\n:-webkit-full-screen {\r\n    z-index: 21474836 !important;\r\n}\r\n/*全屏时隐藏控件  https://css-tricks.com/custom-controls-in-html5-video-full-screen/ */\r\n.qhv-v-box video::-webkit-media-controls-enclosure {\r\n    display: none !important;\r\n}\r\n\r\n.qhv-v-box {\r\n    position: relative;\r\n    width: 100%;\r\n    height: 100%;\r\n    font-size: 16px;\r\n}\r\n\r\n.qhv-v-box video {\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay {\r\n    width: 100%;\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box {\r\n    width: 100%;\r\n    height: 100%;\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    line-height: 1em;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls {\r\n    width: 100%;\r\n    height: 2.5em;\r\n    padding: .625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: absolute;\r\n    left: 0;\r\n    bottom: 0;\r\n    background: rgba(0, 0, 0, .4);\r\n    opacity: 0;\r\n    font-size: .75em;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-playpausebtn {\r\n    width: 1em;\r\n    height: 1em;\r\n    color: #FFF;\r\n    font-size: 1em;\r\n    position: relative;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .5em solid transparent;\r\n    border-left: 1em solid #fff;\r\n    border-bottom: .5em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n}\r\n.qhv-v-box .qhv-ctrls-box .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n.qhv-v-box .qhv-progressbar {\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    padding-left: .833333334em;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg,\r\n.qhv-v-box .qhv-slider-buffer {\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg {\r\n    border-radius: .5em;\r\n    background-color: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-buffer {\r\n    background-color: #999;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-sliderbar {\r\n    width: 100%;\r\n    height: .625em;\r\n    padding-top: .25em;\r\n    position: relative;\r\n    border: 1px solid #aaa;\r\n    border-radius: .5em;\r\n    background: #333;\r\n    margin-top: .0625em;\r\n    -webkit-box-flex: 1;\r\n    display: -webkit-box;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-slider {\r\n    width: 2em;\r\n    height: 1em;\r\n    position: absolute;\r\n    top: -.0625em;\r\n    left: 0;\r\n    background-color: #fff;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-duration,\r\n.qhv-v-box .qhv-progressbar .qhv-current-time,\r\n.qhv-v-box .qhv-progressbar .qhv-sep {\r\n    color: #fff;\r\n    max-width: 4em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-current-time {\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n\r\n/*声音条*/\r\n\r\n.qhv-v-box .qhv-volumebar {\r\n    width: 1em;\r\n    height: 7.25em;\r\n    position: absolute;\r\n    left: 1em;\r\n    bottom: 1.5em;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-icon {\r\n    width: 1em;\r\n    height: 1em;\r\n    margin-bottom: .5em;\r\n    margin-top: .5em;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background: url(" + __webpack_require__(4) + ") no-repeat -16px -16px;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-muted {\r\n    background-position: -16px 0;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-sliderbar {\r\n    width: .25em;\r\n    height: 5.25em;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 50%;\r\n    margin-left: -.125em;\r\n    background: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-slider {\r\n    width: 100%;\r\n    height: 50%;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background-color: red;\r\n}\r\n\r\n\r\n/*全屏按钮*/\r\n\r\n.qhv-v-box .qhv-screen {\r\n    color: #fff;\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n/*视频上的暂停播放按钮*/\r\n\r\n.qhv-overlay-btn {\r\n    width: 3.125em;\r\n    height: 3.125em;\r\n    position: absolute;\r\n    top: 50%;\r\n    left: 50%;\r\n    margin-top: -1.5625em;\r\n    margin-left: -1.5625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n\r\n}\r\n\r\n\r\n.qhv-full-screen .qhv-overlay-btn {\r\n    width: 5em;\r\n    height: 5em;\r\n    margin-top: -2.5em;\r\n    margin-left: -2.5em;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-playpausebtn {\r\n    width: 100%;\r\n    height: 100%;\r\n    /*background: url(../images/bigplay.png) no-repeat;\r\n    background-size: cover;*/\r\n    border: .5em solid #fff;\r\n    border-radius: 50%;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-loading {\r\n    background-color: #fff;\r\n    width: 100%;\r\n    height: 100%;\r\n    border-radius: 100%;\r\n    -webkit-animation-fill-mode: both;\r\n    animation-fill-mode: both;\r\n    border: .5em solid #fff;\r\n    border-bottom-color: transparent;\r\n    background: transparent !important;\r\n    -webkit-animation: rotate 0.75s 0s linear infinite;\r\n    animation: rotate 0.75s 0s linear infinite;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n@keyframes rotate {\r\n    0% {\r\n        -webkit-transform: rotate(0deg);\r\n        transform: rotate(0deg);\r\n    }\r\n    50% {\r\n        -webkit-transform: rotate(180deg);\r\n        transform: rotate(180deg);\r\n    }\r\n    100% {\r\n        -webkit-transform: rotate(360deg);\r\n        transform: rotate(360deg);\r\n    }\r\n}\r\n\r\n.qhv-overlay-btn .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .8em solid transparent;\r\n    border-left: 1.4em solid #fff;\r\n    border-bottom: .8em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.8em;\r\n}\r\n.qhv-overlay-btn .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1.4em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.7em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}", ""]);
+	exports.push([module.id, "qhvdiv {\r\n    display: block;\r\n}\r\n\r\n:-webkit-full-screen {\r\n    z-index: 21474836 !important;\r\n}\r\n/*全屏时隐藏控件  https://css-tricks.com/custom-controls-in-html5-video-full-screen/ */\r\n.qhv-v-box video::-webkit-media-controls-enclosure {\r\n    display: none !important;\r\n}\r\n\r\n.qhv-v-box {\r\n    position: relative;\r\n    width: 100%;\r\n    height: 100%;\r\n    font-size: 16px;\r\n}\r\n\r\n.qhv-v-box video {\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay {\r\n    width: 100%;\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box {\r\n    width: 100%;\r\n    height: 100%;\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    line-height: 1em;\r\n}\r\n.qhv-ios .qhv-v-box .qhv-ctrls, .qhv-ios .qhv-v-box .qhv-volumebar {\r\n    display: none;\r\n}\r\n.qhv-v-box .qhv-ctrls {\r\n    width: 100%;\r\n    height: 2.5em;\r\n    padding: .625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: absolute;\r\n    left: 0;\r\n    bottom: 0;\r\n    background: rgba(0, 0, 0, .4);\r\n    opacity: 0;\r\n    font-size: .75em;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-playpausebtn {\r\n    width: 1em;\r\n    height: 1em;\r\n    color: #FFF;\r\n    font-size: 1em;\r\n    position: relative;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .5em solid transparent;\r\n    border-left: 1em solid #fff;\r\n    border-bottom: .5em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n}\r\n.qhv-v-box .qhv-ctrls-box .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n.qhv-v-box .qhv-progressbar {\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    padding-left: .833333334em;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg,\r\n.qhv-v-box .qhv-slider-buffer {\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg {\r\n    border-radius: .5em;\r\n    background-color: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-buffer {\r\n    background-color: #999;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-sliderbar {\r\n    width: 100%;\r\n    height: .625em;\r\n    padding-top: .25em;\r\n    position: relative;\r\n    border: 1px solid #aaa;\r\n    border-radius: .5em;\r\n    background: #333;\r\n    margin-top: .0625em;\r\n    -webkit-box-flex: 1;\r\n    display: -webkit-box;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-slider {\r\n    width: 2em;\r\n    height: 1em;\r\n    position: absolute;\r\n    top: -.0625em;\r\n    left: 0;\r\n    background-color: #fff;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-duration,\r\n.qhv-v-box .qhv-progressbar .qhv-current-time,\r\n.qhv-v-box .qhv-progressbar .qhv-sep {\r\n    color: #fff;\r\n    max-width: 4em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-current-time {\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n\r\n/*声音条*/\r\n\r\n.qhv-v-box .qhv-volumebar {\r\n    width: 1em;\r\n    height: 7.25em;\r\n    position: absolute;\r\n    left: 1em;\r\n    bottom: 1.5em;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-icon {\r\n    width: 1em;\r\n    height: 1em;\r\n    margin-bottom: .5em;\r\n    margin-top: .5em;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background: url(" + __webpack_require__(4) + ") no-repeat -16px -16px;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-muted {\r\n    background-position: -16px 0;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-sliderbar {\r\n    width: .25em;\r\n    height: 5.25em;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 50%;\r\n    margin-left: -.125em;\r\n    background: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-slider {\r\n    width: 100%;\r\n    height: 50%;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background-color: red;\r\n}\r\n\r\n\r\n/*全屏按钮*/\r\n\r\n.qhv-v-box .qhv-screen {\r\n    color: #fff;\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n/*视频上的暂停播放按钮*/\r\n\r\n.qhv-overlay-btn {\r\n    width: 3.125em;\r\n    height: 3.125em;\r\n    position: absolute;\r\n    top: 50%;\r\n    left: 50%;\r\n    margin-top: -1.5625em;\r\n    margin-left: -1.5625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n\r\n}\r\n\r\n\r\n.qhv-full-screen .qhv-overlay-btn {\r\n    width: 5em;\r\n    height: 5em;\r\n    margin-top: -2.5em;\r\n    margin-left: -2.5em;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-playpausebtn {\r\n    width: 100%;\r\n    height: 100%;\r\n    /*background: url(../images/bigplay.png) no-repeat;\r\n    background-size: cover;*/\r\n    border: .5em solid #fff;\r\n    border-radius: 50%;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-loading {\r\n    background-color: #fff;\r\n    width: 100%;\r\n    height: 100%;\r\n    border-radius: 100%;\r\n    -webkit-animation-fill-mode: both;\r\n    animation-fill-mode: both;\r\n    border: .5em solid #fff;\r\n    border-bottom-color: transparent;\r\n    background: transparent !important;\r\n    -webkit-animation: rotate 0.75s 0s linear infinite;\r\n    animation: rotate 0.75s 0s linear infinite;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n@keyframes rotate {\r\n    0% {\r\n        -webkit-transform: rotate(0deg);\r\n        transform: rotate(0deg);\r\n    }\r\n    50% {\r\n        -webkit-transform: rotate(180deg);\r\n        transform: rotate(180deg);\r\n    }\r\n    100% {\r\n        -webkit-transform: rotate(360deg);\r\n        transform: rotate(360deg);\r\n    }\r\n}\r\n\r\n.qhv-overlay-btn .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .8em solid transparent;\r\n    border-left: 1.4em solid #fff;\r\n    border-bottom: .8em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.8em;\r\n}\r\n.qhv-overlay-btn .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1.4em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.7em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}", ""]);
 
 	// exports
 

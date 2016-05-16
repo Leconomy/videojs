@@ -94,6 +94,6 @@
 	> This volume adjustment can be useful, because it allows the user to mute a game, for example, while still listening to music on the computer.
 
 	> On iOS devices, the audio level is always under the user’s physical control. The volume property is not settable in JavaScript. Reading the volume property always returns 1.
-13. ios的搜索app里没有声音,打开其他网站的视频同样没有声音,调节声音大小也无效。这个应该是app的bug
+13. 在ios里，如果设备设置成静音，搜索app里没有声音,打开其他网站的视频同样没有声音,调节声音大小也无效，但是safari却有声音。
 
 
