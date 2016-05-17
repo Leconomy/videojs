@@ -20,7 +20,7 @@
 	* 添加css样式 [参考文章](https://css-tricks.com/custom-controls-in-html5-video-full-screen/)
 
 	```javascript
-	video::-webkit-media-controls-enclosure {
+	video::-webkit-media-controls-enclosure, video::-webkit-media-controls {
 	    display: none !important;
 	}
 	```

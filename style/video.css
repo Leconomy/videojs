@@ -6,8 +6,8 @@ qhvdiv {
     z-index: 21474836 !important;
 }
 /*全屏时隐藏控件  https://css-tricks.com/custom-controls-in-html5-video-full-screen/ */
-.qhv-v-box video::-webkit-media-controls-enclosure {
-    display: none !important;
+.qhv-v-box video::-webkit-media-controls-enclosure, .qhv-v-box video::-webkit-media-controls {
+    display:none !important;
 }
 
 .qhv-v-box {

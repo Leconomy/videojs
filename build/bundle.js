@@ -64,13 +64,13 @@
 	    self.options = $.extend({
 	        sources: [],
 	        autoPlay: false,
-	        width: 0,
+	        width: window.innerWidth,
 	        height: 0,
 	        poster: ''
 	    }, options);
 	    self.video = null;
 	    self.videoId = 'qhv-v-' + +new Date();
-	    self.volume = 0.5;
+	    self.volume = 1;
 	    self.firstplay = false;
 	    self.isEnded = false;
 	    self.ctrlsIsShow = false;
@@ -103,7 +103,11 @@
 	 */
 	Video.prototype.pureVideoWH = function (width, height) {
 
-	    if (width && height) {
+	    if (!height) {
+	        return ' width="' + width + '"';
+	    }
+
+	    if (height) {
 	        return ' width="' + width + '" height="' + height + '"';
 	    }
 
@@ -116,6 +120,9 @@
 	 * @return {String}        高宽拼接后的字符串
 	 */
 	Video.prototype.pureBoxWH = function (width, height) {
+	    if (!height) {
+	        return ' style="width:' + width + 'px;"';
+	    }
 	    if (width && height) {
 	        return ' style="width:' + width + 'px;height:' + height + 'px"';
 	    }
@@ -150,10 +157,20 @@
 	 * @return {String}        拼接后的字符串
 	 */
 	Video.prototype.pureVolumebar = function (isIOS) {
-	    if (!isIOS) {
-	        return '<qhvdiv class="qhv-volumebar">\n                    <qhvdiv class="qhv-v-sliderbar">\n                        <qhvdiv class="qhv-slider-bg"></qhvdiv>\n                        <qhvdiv class="qhv-v-slider"></qhvdiv>\n                    </qhvdiv>\n                    <qhvdiv class="qhv-volume-icon"></qhvdiv>\n                </qhvdiv>';
-	    }
+	    // if (!isIOS) {
+	    //     return `<qhvdiv class="qhv-volumebar">
+	    //                 <qhvdiv class="qhv-v-sliderbar">
+	    //                     <qhvdiv class="qhv-slider-bg"></qhvdiv>
+	    //                     <qhvdiv class="qhv-v-slider"></qhvdiv>
+	    //                 </qhvdiv>
+	    //                 <qhvdiv class="qhv-volume-icon"></qhvdiv>
+	    //             </qhvdiv>`;
+	    // }
 	    return '';
+	};
+	Video.prototype.purePlaybtn = function () {
+
+	    return '<qhvdiv class="qhv-overlay-btn">\n                <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> \n            </qhvdiv>';
 	};
 	/**
 	 * 处理ios系统，如果是ios添加qhv-ios值
@@ -175,8 +192,24 @@
 	 * @param  {String} volumebar 自定义声音条
 	 * @return {String}           拼接后的字符串
 	 */
-	Video.prototype.pureVideo = function (videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar) {
-	    return '<qhvdiv class="qhv-v-box" ' + boxWH + '>\n                <video id="' + videoId + '" src="' + src + '" ' + poster + ' ' + videoWH + '>' + source + '您的浏览器不支持video标签</video>\n                <qhvdiv class="qhv-overlay">\n                    ' + ctrls + '\n                    <qhvdiv class="qhv-overlay-btn">\n                        <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> \n                    </qhvdiv>\n                    ' + volumebar + '\n                </qhvdiv>\n            </qhvdiv>';
+	Video.prototype.pureVideo = function (videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar, playbtn) {
+	    return '<qhvdiv class="qhv-v-box" ' + boxWH + '>\n                <video id="' + videoId + '" src="' + src + '" ' + poster + ' ' + videoWH + '>' + source + '您的浏览器不支持video标签</video>\n                <qhvdiv class="qhv-overlay">\n                    ' + ctrls + '\n                    ' + playbtn + '\n                    ' + volumebar + '\n                </qhvdiv>\n            </qhvdiv>';
+	};
+	Video.prototype.handleWH = function (width, height) {
+	    var winW = window.innerWidth,
+	        calcH = 0,
+	        calcW = 0,
+	        scale = 1;
+
+	    if (width >= winW) {
+	        calcW = Math.min(width, winW);
+	        calcH = winW / width * height;
+	    } else {
+	        calcW = Math.max(width, winW);
+	        calcH = width / winW * height;
+	    }
+
+	    return { w: calcW, h: calcH };
 	};
 	/**
 	 * 渲染video标签
@@ -192,19 +225,24 @@
 	        poster = '',
 	        ctrls = '',
 	        volumebar = '',
+	        playBtn = '',
 	        isios = isIOS,
+	        oWH = null,
 	        src = options.sources[0],
 	        autoPlay = options.autoPlay ? ' autoPlay' : '';
 
 	    self.handleIOS(isios);
 
+	    oWH = self.handleWH(options.width, options.height);
+
 	    source = self.pureSources(options.sources);
-	    videoWH = self.pureVideoWH(options.width, options.height);
-	    boxWH = self.pureBoxWH(options.width, options.height);
+	    videoWH = self.pureVideoWH(oWH.w, oWH.h);
+	    boxWH = self.pureBoxWH(oWH.w, oWH.h);
 	    poster = self.purePoster(options.poster);
 	    ctrls = self.pureCtrls(isios);
 	    volumebar = self.pureVolumebar(isios);
-	    video = self.pureVideo(self.videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar);
+	    playBtn = self.purePlaybtn(isios);
+	    video = self.pureVideo(self.videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar, playBtn);
 
 	    $(video).appendTo(self.wrapper);
 
@@ -303,6 +341,7 @@
 	    var $progressbar = self.wrapper.find('.qhv-progressbar .qhv-sliderbar');
 	    var $poffset = $progressbar.offset() || { left: 0 };
 	    var $slider = $progressbar.find('.qhv-slider');
+	    var $sliderbg = $progressbar.find('.qhv-slider-bg');
 
 	    // 声音
 	    var $volumebar = self.wrapper.find('.qhv-volumebar .qhv-v-sliderbar');
@@ -314,6 +353,8 @@
 	    var vStartL = 0;
 
 	    var startY = 0;
+	    var startX = 0;
+	    var moveX = 0;
 
 	    var moved = false;
 
@@ -345,22 +386,41 @@
 	            return;
 	        }
 	        startY = ev.touches[0].screenY;
+	        startX = ev.touches[0].screenX;
+
+	        moved = false;
+	        moveX = 0;
 	    }).on('touchmove', '.qhv-overlay', function (ev) {
 	        ev.stopPropagation();
-	        if (ev.target !== this || Math.abs(startY - ev.touches[0].screenY) < 10) {
+	        var $this = $(this);
+
+	        if (ev.target !== this || !$this.hasClass('qhv-full-screen')) {
 	            return;
 	        }
-	        var $this = $(this);
 	        var moveY = (startY - ev.touches[0].screenY) / 10 + $vslider.height();
+	        moveX = (ev.touches[0].screenX - startX) / 2 + $sliderbg.width();
+
+	        moved = true;
 
 	        moveY = Math.min($volumebar.height(), Math.max(0, moveY));
-	        self.updateVolume($vslider, moveY);
+
+	        moveX = Math.min($progressbar.width(), Math.max(0, moveX));
+
+	        // self.updateVolume($vslider, moveY);
 	    }).on('touchend', '.qhv-overlay', function (ev) {
 	        ev.stopPropagation();
 	        if (ev.target !== this || !self.firstplay) {
 	            return;
 	        }
-	        self.showCtrls();
+
+	        if (moved) {
+	            self.showCtrls();
+	            video.currentTime = moveX / $progressbar.width() * duration;
+	            self.updateSliderbar($progressbar, moveX);
+	            return;
+	        }
+
+	        self.ctrlsIsShow ? self.hideCtrls() : self.showCtrls();
 	    })
 	    // 点击声音静音按钮
 	    .on('touchstart', '.qhv-volume-icon', function (ev) {
@@ -513,7 +573,7 @@
 	            // 如果是正常播放并且控件是显示的，那隔5s后隐藏控件
 	            if (lastVideoTime != video.currentTime) {
 	                if (self.ctrlsIsShow) {
-	                    if (time - showTime >= 5000) {
+	                    if (time - showTime >= 3000) {
 	                        self.hideCtrls();
 	                    }
 	                } else {
@@ -578,20 +638,20 @@
 
 	    video.addEventListener('waiting', function () {
 	        self.waiting();
-	        console.log('waiting');
+	        // console.log('waiting');
 	    }, false);
 
 	    video.addEventListener('canplay', function () {
-	        console.log('canplay');
+	        // console.log('canplay')
 	        self.loaded();
 	    }, false);
 
 	    video.addEventListener('canplaythrough', function () {
-	        console.log('canplaythrough');
+	        // console.log('canplaythrough')
 	    }, false);
 
 	    video.addEventListener('playing', function () {
-	        console.log('playing');
+	        // console.log('playing')
 	    }, false);
 
 	    video.addEventListener('ended', function () {
@@ -599,17 +659,17 @@
 	    }, false);
 
 	    video.addEventListener('seeking', function () {
-	        console.log('seeking');
+	        // console.log('seeking')
 	        self.waiting();
 	    }, false);
 
 	    video.addEventListener('seeked', function () {
-	        console.log('seeked');
+	        // console.log('seeked')
 	        video.paused ? self.paused() : self.play();
 	    }, false);
 
 	    video.addEventListener('play', function () {
-	        console.log('play');
+	        // console.log('play')
 	    }, false);
 
 	    video.addEventListener('pause', function () {
@@ -617,32 +677,32 @@
 	    }, false);
 
 	    video.addEventListener('progress', function (ev) {
-	        console.log('progress');
+	        // console.log('progress')
 	    }, false);
 
 	    // video.addEventListener('durationchange', type, false);
 	    // video.addEventListener('fullscreenchange', type, false);
 	    video.addEventListener('error', function () {
-	        console.log('error');
+	        // console.log('error')
 	        video.load();
 	    }, false);
 
 	    // 不能触发waiting事件，因为有时候播放正常，缓冲加载足够播放的数据，但是仍然会出现suspend的情况
 	    video.addEventListener('suspend', function () {
-	        console.log('suspend');
+	        // console.log('suspend')
 	    }, false);
 
 	    video.addEventListener('abort', function () {
-	        console.log('abort');
+	        // console.log('abort');
 	    }, false);
 
 	    video.addEventListener('emptied', function () {
-	        console.log('emptied');
+	        // console.log('emptied')
 	    }, false);
 
 	    // 失速
 	    video.addEventListener('stalled', function () {
-	        console.log('stalled');
+	        // console.log('stalled')
 	        // 如果已经点击播放了，再出现stalled则触发waiting事件
 	        if (self.firstplay) {
 	            self.waiting();
@@ -696,7 +756,7 @@
 
 
 	// module
-	exports.push([module.id, "qhvdiv {\r\n    display: block;\r\n}\r\n\r\n:-webkit-full-screen {\r\n    z-index: 21474836 !important;\r\n}\r\n/*全屏时隐藏控件  https://css-tricks.com/custom-controls-in-html5-video-full-screen/ */\r\n.qhv-v-box video::-webkit-media-controls-enclosure {\r\n    display: none !important;\r\n}\r\n\r\n.qhv-v-box {\r\n    position: relative;\r\n    width: 100%;\r\n    height: 100%;\r\n    font-size: 16px;\r\n}\r\n\r\n.qhv-v-box video {\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay {\r\n    width: 100%;\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box {\r\n    width: 100%;\r\n    height: 100%;\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    line-height: 1em;\r\n}\r\n.qhv-ios .qhv-v-box .qhv-ctrls, .qhv-ios .qhv-v-box .qhv-volumebar {\r\n    display: none;\r\n}\r\n.qhv-v-box .qhv-ctrls {\r\n    width: 100%;\r\n    height: 2.5em;\r\n    padding: .625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: absolute;\r\n    left: 0;\r\n    bottom: 0;\r\n    background: rgba(0, 0, 0, .4);\r\n    opacity: 0;\r\n    font-size: .75em;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-playpausebtn {\r\n    width: 1em;\r\n    height: 1em;\r\n    color: #FFF;\r\n    font-size: 1em;\r\n    position: relative;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .5em solid transparent;\r\n    border-left: 1em solid #fff;\r\n    border-bottom: .5em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n}\r\n.qhv-v-box .qhv-ctrls-box .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n.qhv-v-box .qhv-progressbar {\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    padding-left: .833333334em;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg,\r\n.qhv-v-box .qhv-slider-buffer {\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg {\r\n    border-radius: .5em;\r\n    background-color: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-buffer {\r\n    background-color: #999;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-sliderbar {\r\n    width: 100%;\r\n    height: .625em;\r\n    padding-top: .25em;\r\n    position: relative;\r\n    border: 1px solid #aaa;\r\n    border-radius: .5em;\r\n    background: #333;\r\n    margin-top: .0625em;\r\n    -webkit-box-flex: 1;\r\n    display: -webkit-box;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-slider {\r\n    width: 2em;\r\n    height: 1em;\r\n    position: absolute;\r\n    top: -.0625em;\r\n    left: 0;\r\n    background-color: #fff;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-duration,\r\n.qhv-v-box .qhv-progressbar .qhv-current-time,\r\n.qhv-v-box .qhv-progressbar .qhv-sep {\r\n    color: #fff;\r\n    max-width: 4em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-current-time {\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n\r\n/*声音条*/\r\n\r\n.qhv-v-box .qhv-volumebar {\r\n    width: 1em;\r\n    height: 7.25em;\r\n    position: absolute;\r\n    left: 1em;\r\n    bottom: 1.5em;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-icon {\r\n    width: 1em;\r\n    height: 1em;\r\n    margin-bottom: .5em;\r\n    margin-top: .5em;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background: url(" + __webpack_require__(4) + ") no-repeat -16px -16px;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-muted {\r\n    background-position: -16px 0;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-sliderbar {\r\n    width: .25em;\r\n    height: 5.25em;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 50%;\r\n    margin-left: -.125em;\r\n    background: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-slider {\r\n    width: 100%;\r\n    height: 50%;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background-color: red;\r\n}\r\n\r\n\r\n/*全屏按钮*/\r\n\r\n.qhv-v-box .qhv-screen {\r\n    color: #fff;\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n/*视频上的暂停播放按钮*/\r\n\r\n.qhv-overlay-btn {\r\n    width: 3.125em;\r\n    height: 3.125em;\r\n    position: absolute;\r\n    top: 50%;\r\n    left: 50%;\r\n    margin-top: -1.5625em;\r\n    margin-left: -1.5625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n\r\n}\r\n\r\n\r\n.qhv-full-screen .qhv-overlay-btn {\r\n    width: 5em;\r\n    height: 5em;\r\n    margin-top: -2.5em;\r\n    margin-left: -2.5em;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-playpausebtn {\r\n    width: 100%;\r\n    height: 100%;\r\n    /*background: url(../images/bigplay.png) no-repeat;\r\n    background-size: cover;*/\r\n    border: .5em solid #fff;\r\n    border-radius: 50%;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-loading {\r\n    background-color: #fff;\r\n    width: 100%;\r\n    height: 100%;\r\n    border-radius: 100%;\r\n    -webkit-animation-fill-mode: both;\r\n    animation-fill-mode: both;\r\n    border: .5em solid #fff;\r\n    border-bottom-color: transparent;\r\n    background: transparent !important;\r\n    -webkit-animation: rotate 0.75s 0s linear infinite;\r\n    animation: rotate 0.75s 0s linear infinite;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n@keyframes rotate {\r\n    0% {\r\n        -webkit-transform: rotate(0deg);\r\n        transform: rotate(0deg);\r\n    }\r\n    50% {\r\n        -webkit-transform: rotate(180deg);\r\n        transform: rotate(180deg);\r\n    }\r\n    100% {\r\n        -webkit-transform: rotate(360deg);\r\n        transform: rotate(360deg);\r\n    }\r\n}\r\n\r\n.qhv-overlay-btn .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .8em solid transparent;\r\n    border-left: 1.4em solid #fff;\r\n    border-bottom: .8em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.8em;\r\n}\r\n.qhv-overlay-btn .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1.4em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.7em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}", ""]);
+	exports.push([module.id, "qhvdiv {\r\n    display: block;\r\n}\r\n\r\n:-webkit-full-screen {\r\n    z-index: 21474836 !important;\r\n}\r\n/*全屏时隐藏控件  https://css-tricks.com/custom-controls-in-html5-video-full-screen/ */\r\n.qhv-v-box video::-webkit-media-controls-enclosure, .qhv-v-box video::-webkit-media-controls {\r\n    display:none !important;\r\n}\r\n\r\n.qhv-v-box {\r\n    position: relative;\r\n    width: 100%;\r\n    height: 100%;\r\n    font-size: 16px;\r\n}\r\n\r\n.qhv-v-box video {\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay {\r\n    width: 100%;\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box {\r\n    width: 100%;\r\n    height: 100%;\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    line-height: 1em;\r\n}\r\n.qhv-ios .qhv-v-box .qhv-ctrls, .qhv-ios .qhv-v-box .qhv-volumebar {\r\n    display: none;\r\n}\r\n.qhv-v-box .qhv-ctrls {\r\n    width: 100%;\r\n    height: 2.5em;\r\n    padding: .625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: absolute;\r\n    left: 0;\r\n    bottom: 0;\r\n    background: rgba(0, 0, 0, .4);\r\n    opacity: 0;\r\n    font-size: .75em;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-playpausebtn {\r\n    width: 1em;\r\n    height: 1em;\r\n    color: #FFF;\r\n    font-size: 1em;\r\n    position: relative;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .5em solid transparent;\r\n    border-left: 1em solid #fff;\r\n    border-bottom: .5em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n}\r\n.qhv-v-box .qhv-ctrls-box .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n.qhv-v-box .qhv-progressbar {\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    padding-left: .833333334em;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg,\r\n.qhv-v-box .qhv-slider-buffer {\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg {\r\n    border-radius: .5em;\r\n    background-color: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-buffer {\r\n    background-color: #999;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-sliderbar {\r\n    width: 100%;\r\n    height: .625em;\r\n    padding-top: .25em;\r\n    position: relative;\r\n    border: 1px solid #aaa;\r\n    border-radius: .5em;\r\n    background: #333;\r\n    margin-top: .0625em;\r\n    -webkit-box-flex: 1;\r\n    display: -webkit-box;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-slider {\r\n    width: 2em;\r\n    height: 1em;\r\n    position: absolute;\r\n    top: -.0625em;\r\n    left: 0;\r\n    background-color: #fff;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-duration,\r\n.qhv-v-box .qhv-progressbar .qhv-current-time,\r\n.qhv-v-box .qhv-progressbar .qhv-sep {\r\n    color: #fff;\r\n    max-width: 4em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-current-time {\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n\r\n/*声音条*/\r\n\r\n.qhv-v-box .qhv-volumebar {\r\n    width: 1em;\r\n    height: 7.25em;\r\n    position: absolute;\r\n    left: 1em;\r\n    bottom: 1.5em;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-icon {\r\n    width: 1em;\r\n    height: 1em;\r\n    margin-bottom: .5em;\r\n    margin-top: .5em;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background: url(" + __webpack_require__(4) + ") no-repeat -16px -16px;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-muted {\r\n    background-position: -16px 0;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-sliderbar {\r\n    width: .25em;\r\n    height: 5.25em;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 50%;\r\n    margin-left: -.125em;\r\n    background: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-slider {\r\n    width: 100%;\r\n    height: 50%;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background-color: red;\r\n}\r\n\r\n\r\n/*全屏按钮*/\r\n\r\n.qhv-v-box .qhv-screen {\r\n    color: #fff;\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n/*视频上的暂停播放按钮*/\r\n\r\n.qhv-overlay-btn {\r\n    width: 3.125em;\r\n    height: 3.125em;\r\n    position: absolute;\r\n    top: 50%;\r\n    left: 50%;\r\n    margin-top: -1.5625em;\r\n    margin-left: -1.5625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n\r\n}\r\n\r\n\r\n.qhv-full-screen .qhv-overlay-btn {\r\n    width: 5em;\r\n    height: 5em;\r\n    margin-top: -2.5em;\r\n    margin-left: -2.5em;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-playpausebtn {\r\n    width: 100%;\r\n    height: 100%;\r\n    /*background: url(../images/bigplay.png) no-repeat;\r\n    background-size: cover;*/\r\n    border: .5em solid #fff;\r\n    border-radius: 50%;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-loading {\r\n    background-color: #fff;\r\n    width: 100%;\r\n    height: 100%;\r\n    border-radius: 100%;\r\n    -webkit-animation-fill-mode: both;\r\n    animation-fill-mode: both;\r\n    border: .5em solid #fff;\r\n    border-bottom-color: transparent;\r\n    background: transparent !important;\r\n    -webkit-animation: rotate 0.75s 0s linear infinite;\r\n    animation: rotate 0.75s 0s linear infinite;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n@keyframes rotate {\r\n    0% {\r\n        -webkit-transform: rotate(0deg);\r\n        transform: rotate(0deg);\r\n    }\r\n    50% {\r\n        -webkit-transform: rotate(180deg);\r\n        transform: rotate(180deg);\r\n    }\r\n    100% {\r\n        -webkit-transform: rotate(360deg);\r\n        transform: rotate(360deg);\r\n    }\r\n}\r\n\r\n.qhv-overlay-btn .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .8em solid transparent;\r\n    border-left: 1.4em solid #fff;\r\n    border-bottom: .8em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.8em;\r\n}\r\n.qhv-overlay-btn .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1.4em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.7em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}", ""]);
 
 	// exports
 
