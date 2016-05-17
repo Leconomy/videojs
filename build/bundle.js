@@ -151,23 +151,23 @@
 
 	    return '';
 	};
-	/**
-	 * 拼接自定义声音条字符串
-	 * @param  {Boolean} isIOS  是不是ios系统
-	 * @return {String}        拼接后的字符串
-	 */
-	Video.prototype.pureVolumebar = function (isIOS) {
-	    // if (!isIOS) {
-	    //     return `<qhvdiv class="qhv-volumebar">
-	    //                 <qhvdiv class="qhv-v-sliderbar">
-	    //                     <qhvdiv class="qhv-slider-bg"></qhvdiv>
-	    //                     <qhvdiv class="qhv-v-slider"></qhvdiv>
-	    //                 </qhvdiv>
-	    //                 <qhvdiv class="qhv-volume-icon"></qhvdiv>
-	    //             </qhvdiv>`;
-	    // }
-	    return '';
-	};
+	// /**
+	//  * 拼接自定义声音条字符串
+	//  * @param  {Boolean} isIOS  是不是ios系统
+	//  * @return {String}        拼接后的字符串
+	//  */
+	// Video.prototype.pureVolumebar = function(isIOS) {
+	//     // if (!isIOS) {
+	//     //     return `<qhvdiv class="qhv-volumebar">
+	//     //                 <qhvdiv class="qhv-v-sliderbar">
+	//     //                     <qhvdiv class="qhv-slider-bg"></qhvdiv>
+	//     //                     <qhvdiv class="qhv-v-slider"></qhvdiv>
+	//     //                 </qhvdiv>
+	//     //                 <qhvdiv class="qhv-volume-icon"></qhvdiv>
+	//     //             </qhvdiv>`;
+	//     // }
+	//     return '';
+	// };
 	Video.prototype.purePlaybtn = function () {
 
 	    return '<qhvdiv class="qhv-overlay-btn">\n                <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> \n            </qhvdiv>';
@@ -189,11 +189,10 @@
 	 * @param  {String} boxWH     v-box的高宽
 	 * @param  {String} poster    video标签的poster
 	 * @param  {String} ctrls     自定义控制条
-	 * @param  {String} volumebar 自定义声音条
 	 * @return {String}           拼接后的字符串
 	 */
-	Video.prototype.pureVideo = function (videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar, playbtn) {
-	    return '<qhvdiv class="qhv-v-box" ' + boxWH + '>\n                <video id="' + videoId + '" src="' + src + '" ' + poster + ' ' + videoWH + '>' + source + '您的浏览器不支持video标签</video>\n                <qhvdiv class="qhv-overlay">\n                    ' + ctrls + '\n                    ' + playbtn + '\n                    ' + volumebar + '\n                </qhvdiv>\n            </qhvdiv>';
+	Video.prototype.pureVideo = function (videoId, src, source, videoWH, boxWH, poster, ctrls, playbtn) {
+	    return '<qhvdiv class="qhv-v-box" ' + boxWH + '>\n                <video id="' + videoId + '" src="' + src + '" ' + poster + ' ' + videoWH + '>' + source + '您的浏览器不支持video标签</video>\n                <qhvdiv class="qhv-overlay">\n                    ' + ctrls + '\n                    ' + playbtn + '\n                </qhvdiv>\n            </qhvdiv>';
 	};
 	Video.prototype.handleWH = function (width, height) {
 	    var winW = window.innerWidth,
@@ -224,8 +223,9 @@
 	        boxWH = '',
 	        poster = '',
 	        ctrls = '',
-	        volumebar = '',
-	        playBtn = '',
+
+	    // volumebar = '',
+	    playBtn = '',
 	        isios = isIOS,
 	        oWH = null,
 	        src = options.sources[0],
@@ -240,9 +240,9 @@
 	    boxWH = self.pureBoxWH(oWH.w, oWH.h);
 	    poster = self.purePoster(options.poster);
 	    ctrls = self.pureCtrls(isios);
-	    volumebar = self.pureVolumebar(isios);
+	    // volumebar = self.pureVolumebar(isios);
 	    playBtn = self.purePlaybtn(isios);
-	    video = self.pureVideo(self.videoId, src, source, videoWH, boxWH, poster, ctrls, volumebar, playBtn);
+	    video = self.pureVideo(self.videoId, src, source, videoWH, boxWH, poster, ctrls, playBtn);
 
 	    $(video).appendTo(self.wrapper);
 
@@ -297,17 +297,17 @@
 	    $slider.css('left', l);
 	    sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
 	};
-	/**
-	 * 更新声音条
-	 * @param {Number} h 声音条高度
-	 * @return {[type]} [description]
-	 */
-	Video.prototype.updateVolume = function (volume, h) {
-	    var self = this;
-	    volume.height(h);
-	    self.video.volume = h / 100;
-	    self.volume = h / 100;
-	};
+	// /**
+	//  * 更新声音条
+	//  * @param {Number} h 声音条高度
+	//  * @return {[type]} [description]
+	//  */
+	// Video.prototype.updateVolume = function(volume, h) {
+	//     let self = this;
+	//     volume.height(h);
+	//     self.video.volume = h / 100;
+	//     self.volume = h / 100;
+	// };
 
 	Video.prototype.buffer = function () {
 	    var self = this;
@@ -397,12 +397,12 @@
 	        if (ev.target !== this || !$this.hasClass('qhv-full-screen')) {
 	            return;
 	        }
-	        var moveY = (startY - ev.touches[0].screenY) / 10 + $vslider.height();
+	        // let moveY = (startY - ev.touches[0].screenY) / 10 + $vslider.height();
 	        moveX = (ev.touches[0].screenX - startX) / 2 + $sliderbg.width();
 
 	        moved = true;
 
-	        moveY = Math.min($volumebar.height(), Math.max(0, moveY));
+	        // moveY = Math.min($volumebar.height(), Math.max(0, moveY));
 
 	        moveX = Math.min($progressbar.width(), Math.max(0, moveX));
 
@@ -422,22 +422,23 @@
 
 	        self.ctrlsIsShow ? self.hideCtrls() : self.showCtrls();
 	    })
-	    // 点击声音静音按钮
-	    .on('touchstart', '.qhv-volume-icon', function (ev) {
-	        ev.stopPropagation();
-	        var $this = $('this');
-	        if (video.muted) {
-	            $this.removeClass('qhv-volume-muted');
-	            video.volume = self.volume;
-	            self.updateVolume($vslider, self.volume * $volumebar.height());
-	            video.muted = false;
-	        } else {
-	            $this.addClass('qhv-volume-muted');
-	            video.volume = 0;
-	            self.updateVolume($vslider, 0);
-	            video.muted = true;
-	        }
-	    })
+	    // // 点击声音静音按钮
+	    // .on('touchstart', '.qhv-volume-icon', function(ev) {
+	    //     ev.stopPropagation();
+	    //     let $this = $('this');
+	    //     if (video.muted) {
+	    //         $this.removeClass('qhv-volume-muted');
+	    //         video.volume = self.volume;
+	    //         self.updateVolume($vslider, self.volume * $volumebar.height());
+	    //         video.muted = false;
+	    //     } else {
+	    //         $this.addClass('qhv-volume-muted');
+	    //         video.volume = 0;
+	    //         self.updateVolume($vslider, 0);
+	    //         video.muted = true;
+	    //     }
+
+	    // })
 
 	    // 点击播放进度条
 	    .on('touchstart', '.qhv-p-sliderbar', function (ev) {
