@@ -121,23 +121,7 @@ Video.prototype.pureCtrls = function(isIOS) {
 
     return '';
 };
-// /**
-//  * 拼接自定义声音条字符串
-//  * @param  {Boolean} isIOS  是不是ios系统
-//  * @return {String}        拼接后的字符串
-//  */
-// Video.prototype.pureVolumebar = function(isIOS) {
-//     // if (!isIOS) {
-//     //     return `<qhvdiv class="qhv-volumebar">
-//     //                 <qhvdiv class="qhv-v-sliderbar">
-//     //                     <qhvdiv class="qhv-slider-bg"></qhvdiv>
-//     //                     <qhvdiv class="qhv-v-slider"></qhvdiv>
-//     //                 </qhvdiv>
-//     //                 <qhvdiv class="qhv-volume-icon"></qhvdiv>
-//     //             </qhvdiv>`;
-//     // }
-//     return '';
-// };
+
 Video.prototype.purePlaybtn = function() {
 
     return `<qhvdiv class="qhv-overlay-btn">
@@ -204,7 +188,6 @@ Video.prototype.renderVideo = function() {
         boxWH = '',
         poster = '',
         ctrls = '',
-        // volumebar = '',
         playBtn = '',
         isios = isIOS,
         oWH = null,
@@ -220,7 +203,6 @@ Video.prototype.renderVideo = function() {
     boxWH = self.pureBoxWH(oWH.w, oWH.h);
     poster = self.purePoster(options.poster);
     ctrls = self.pureCtrls(isios);
-    // volumebar = self.pureVolumebar(isios);
     playBtn = self.purePlaybtn(isios);
     video = self.pureVideo(self.videoId, src, source, videoWH, boxWH, poster, ctrls, playBtn);
 
@@ -277,18 +259,6 @@ Video.prototype.updateSliderbar = function(sliderbar, l) {
     sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
 
 };
-// /**
-//  * 更新声音条
-//  * @param {Number} h 声音条高度
-//  * @return {[type]} [description]
-//  */
-// Video.prototype.updateVolume = function(volume, h) {
-//     let self = this;
-//     volume.height(h);
-//     self.video.volume = h / 100;
-//     self.volume = h / 100;
-// };
-
 
 Video.prototype.buffer = function() {
     let self = this;
@@ -322,10 +292,6 @@ Video.prototype.on = function() {
     const $poffset = $progressbar.offset() || { left: 0 };
     const $slider = $progressbar.find('.qhv-slider');
     const $sliderbg = $progressbar.find('.qhv-slider-bg');
-
-    // 声音
-    const $volumebar = self.wrapper.find('.qhv-volumebar .qhv-v-sliderbar');
-    const $vslider = $volumebar.find('.qhv-v-slider');
 
 
     let pStartX = 0;
@@ -383,17 +349,13 @@ Video.prototype.on = function() {
             if (ev.target !== this || !$this.hasClass('qhv-full-screen')) {
                 return;
             }
-            // let moveY = (startY - ev.touches[0].screenY) / 10 + $vslider.height();
+
             moveX = (ev.touches[0].screenX - startX) / 2 + $sliderbg.width();
 
             moved = true;
 
-            // moveY = Math.min($volumebar.height(), Math.max(0, moveY));
-
             moveX = Math.min($progressbar.width(), Math.max(0, moveX));
-
-            // self.updateVolume($vslider, moveY);
-            
+          
         })
         .on('touchend', '.qhv-overlay', function(ev) {
             ev.stopPropagation();
@@ -412,23 +374,6 @@ Video.prototype.on = function() {
             
 
         })
-        // // 点击声音静音按钮
-        // .on('touchstart', '.qhv-volume-icon', function(ev) {
-        //     ev.stopPropagation();
-        //     let $this = $('this');
-        //     if (video.muted) {
-        //         $this.removeClass('qhv-volume-muted');
-        //         video.volume = self.volume;
-        //         self.updateVolume($vslider, self.volume * $volumebar.height());
-        //         video.muted = false;
-        //     } else {
-        //         $this.addClass('qhv-volume-muted');
-        //         video.volume = 0;
-        //         self.updateVolume($vslider, 0);
-        //         video.muted = true;
-        //     }
-
-        // })
 
     // 点击播放进度条
     .on('touchstart', '.qhv-p-sliderbar', function(ev) {
@@ -477,8 +422,8 @@ Video.prototype.showCtrls = function() {
     let $overlay = $wrapper.find('.qhv-overlay');
     let $ctrl = $overlay.find('.qhv-ctrls');
     let $midbtn = $overlay.find('.qhv-overlay-btn');
-    let $volume = $overlay.find('.qhv-volumebar');
-    $midbtn.add($volume).show();
+
+    $midbtn.show();
     $ctrl.css('opacity', 1);
     self.ctrlsIsShow = true;
 
@@ -491,9 +436,9 @@ Video.prototype.hideCtrls = function() {
     let $overlay = $wrapper.find('.qhv-overlay');
     let $ctrl = $overlay.find('.qhv-ctrls');
     let $midbtn = $overlay.find('.qhv-overlay-btn');
-    let $volume = $overlay.find('.qhv-volumebar');
 
-    $midbtn.add($volume).hide();
+
+    $midbtn.hide();
     $ctrl.css('opacity', 0);
     self.ctrlsIsShow = false;
 
@@ -624,96 +569,91 @@ Video.prototype.addListener = function() {
 
     // 视频播放的进度
     video.addEventListener('timeupdate', function(ev) {
-        // console.log('timeupdate')
+
         const max = $progressbar.width() - $sliderbar.width();
         self.updatePlayTime(video.currentTime);
         self.updateSliderbar($progressbar, video.currentTime / video.duration * max);
 
     }, false);
 
+    let loadCount = 0;
+
+    video.addEventListener('error', function() {
+        if(++loadCount < 4) {
+            video.load();
+        }
+    }, false);
 
     video.addEventListener('loadstart', function() {
         self.waiting();
-
     }, false);
 
     video.addEventListener('waiting', function() {
         self.waiting();
-        // console.log('waiting');
     }, false);
 
     video.addEventListener('canplay', function() {
-        // console.log('canplay')
         self.loaded();
-    }, false);
-
-    video.addEventListener('canplaythrough', function() {
-        // console.log('canplaythrough')
-    }, false);
-
-    video.addEventListener('playing', function() {
-        // console.log('playing')
     }, false);
 
     video.addEventListener('ended', function() {
         self.ended();
     }, false);
 
-    video.addEventListener('seeking', function() {
-        // console.log('seeking')
-        self.waiting();
-    }, false);
-
-    video.addEventListener('seeked', function() {
-        // console.log('seeked')
-        video.paused ? self.paused() : self.play();
-
-    }, false);
-
-    video.addEventListener('play', function() {
-        // console.log('play')
-    }, false);
-
     video.addEventListener('pause', function() {
         self.showCtrls();
     }, false);
 
+    video.addEventListener('seeking', function() {
+        self.waiting();
+    }, false);
+    
+
+    video.addEventListener('seeked', function() {
+        video.paused ? self.paused() : self.play();
+    }, false);
+
+    video.addEventListener('canplaythrough', function() {
+
+    }, false);
+
+    video.addEventListener('playing', function() {
+
+    }, false);
+
+    video.addEventListener('play', function() {
+
+    }, false);
+
     video.addEventListener('progress', function(ev) {
-        // console.log('progress')
+
     }, false);
 
     // video.addEventListener('durationchange', type, false);
     // video.addEventListener('fullscreenchange', type, false);
-    video.addEventListener('error', function() {
-        // console.log('error')
-        video.load();
-    }, false);
 
     // 不能触发waiting事件，因为有时候播放正常，缓冲加载足够播放的数据，但是仍然会出现suspend的情况
     video.addEventListener('suspend', function() {
-        // console.log('suspend')
+
     }, false);
 
     video.addEventListener('abort', function() {
-        // console.log('abort');
+
     }, false);
 
     video.addEventListener('emptied', function() {
-        // console.log('emptied')
+
     }, false);
 
     // 失速
     video.addEventListener('stalled', function() {
-        // console.log('stalled')
-            // 如果已经点击播放了，再出现stalled则触发waiting事件
+        // 如果已经点击播放了，再出现stalled则触发waiting事件
         if (self.firstplay) {
             self.waiting();
         }
     }, false);
 
     video.addEventListener('loadedmetadata', function() {
-        let $volumebar = self.wrapper.find('.qhv-volumebar .qhv-sliderbar');
-        self.updateSliderbar($volumebar, self.volume * $volumebar.width() - $volumebar.find('.qhv-slider').width() / 2);
         self.setDuration(formatTime.format(self.video.duration));
         self.updatePlayTime(self.video.duration);
         self.on();

@@ -19,6 +19,7 @@ qhvdiv {
 
 .qhv-v-box video {
     position: relative;
+    display: block;
 }
 
 .qhv-overlay {
