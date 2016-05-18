@@ -1,4 +1,5 @@
 'use strict'
+try {
 require('../style/video.css');
 require('./customElem');
 
@@ -654,13 +655,18 @@ Video.prototype.addListener = function() {
     }, false);
 
     video.addEventListener('loadedmetadata', function() {
-        self.setDuration(formatTime.format(self.video.duration));
-        self.updatePlayTime(self.video.duration);
+        if(!isIOS) {
+            self.setDuration(formatTime.format(self.video.duration));
+            self.updatePlayTime(self.video.duration);
+            self.changeStatus();
+        }
         self.on();
-        self.changeStatus();
     }, false);
 
 };
 
 
 window.Video = Video;
+} catch (e) {
+    alert('error')
+}
