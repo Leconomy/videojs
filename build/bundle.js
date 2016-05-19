@@ -46,616 +46,582 @@
 
 	'use strict';
 
-	try {
-	    (function () {
-	        var Video = function Video(wrapper, options) {
-	            var self = this;
+	__webpack_require__(1);
+	__webpack_require__(6);
 
-	            this.wrapper = wrapper;
-	            self.options = $.extend({
-	                sources: [],
-	                autoPlay: false,
-	                width: window.innerWidth,
-	                height: 0,
-	                poster: ''
-	            }, options);
-	            self.video = null;
-	            self.videoId = 'qhv-v-' + +new Date();
-	            self.volume = 1;
-	            self.firstplay = false;
+	var UA = __webpack_require__(7);
+	var formatTime = __webpack_require__(8);
+	var requestAnimate = __webpack_require__(9);
+	var fullscreen = __webpack_require__(10);
+	var getVideoUI = __webpack_require__(11);
+	var isIOS = UA.isIOS;
+	var isAPP = UA.isApp;
+
+	function Video(wrapper, options) {
+	    var self = this;
+
+	    self.wrapper = wrapper;
+
+	    self.options = $.extend({
+	        sources: [],
+	        autoPlay: false,
+	        width: window.innerWidth,
+	        height: 0,
+	        poster: ''
+	    }, options);
+
+	    self.video = null;
+	    self.videoId = 'qhv-v-' + +new Date();
+	    self.firstplay = false;
+	    self.isEnded = false;
+	    self.ctrlsIsShow = false;
+
+	    self.init();
+	}
+
+	Video.prototype.init = function () {
+	    var self = this;
+
+	    self.renderVideo();
+	};
+
+	Video.prototype.handleWH = function (width, height) {
+	    var winW = window.innerWidth,
+	        calcH = 0,
+	        calcW = 0,
+	        scale = 1;
+
+	    if (width >= winW) {
+	        calcW = Math.min(width, winW);
+	        calcH = winW / width * height;
+	    } else {
+	        calcW = Math.max(width, winW);
+	        calcH = width / winW * height;
+	    }
+
+	    return { w: calcW, h: calcH };
+	};
+	/**
+	 * 渲染video标签
+	 * @return {[type]} [description]
+	 */
+	Video.prototype.renderVideo = function () {
+	    var self = this,
+	        options = self.options,
+	        video = '',
+	        oWH = null,
+	        src = options.sources[0],
+	        autoPlay = options.autoPlay ? ' autoPlay' : '';
+
+	    oWH = self.handleWH(options.width, options.height);
+	    video = getVideoUI.getVideo(self.videoId, src, options.sources, oWH.w, oWH.h, options.poster);
+
+	    $(video).appendTo(self.wrapper);
+
+	    self.video = document.getElementById(self.videoId);
+	    $(self.video).ready(function () {
+	        self.renderControls();
+	    });
+
+	    // video加载失败的事件
+	    self.addErrorListener();
+
+	    if (isIOS) {
+	        self.wrapper.addClass('qhv-ios');
+	        // video的元数据加载完成的事件
+	        self.addLoadedDataListener();
+	    } else {
+	        // video的元数据加载完成的事件
+	        self.addAndroidLoadedDataListener();
+	        // video的waiting、canplay、suspend等事件
+	        self.addAndroidListener();
+	        // 全屏
+	        self.fullscreen();
+	    }
+	};
+
+	Video.prototype.setDuration = function () {
+	    var duration = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
+
+	    var self = this;
+	    self.wrapper.find('.qhv-duration').html(duration);
+	};
+	/**
+	 * 渲染自定义控件
+	 * @return {[type]} [description]
+	 */
+	Video.prototype.renderControls = function () {
+	    var self = this;
+	    if (self.options.autoPlay) {
+	        self.video.play();
+	        self.firstplay = true;
+	    }
+
+	    self.wrapper.find('.qhv-ctrls').css('opacity', 1);
+	};
+	/**
+	 * 更新视频播放时长
+	 * @param  {Number} time 当前视频播放的时长
+	 * @return {[type]}      [description]
+	 */
+	Video.prototype.updatePlayTime = function (time) {
+	    var self = this;
+	    self.wrapper.find('.qhv-current-time').html(formatTime.format(time));
+	};
+	/**
+	 * 更新滑块条位置
+	 * @param  {Number} l 进度条位置
+	 * @param  {Object} sliderbar 需要更新滑块的对象
+	 * @return {[type]}   [description]
+	 */
+	Video.prototype.updateSliderbar = function (sliderbar, l) {
+
+	    var self = this;
+	    var $slider = sliderbar.find('.qhv-slider');
+	    $slider.css('left', l);
+	    sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
+	};
+	/**
+	 * 计算已经缓冲的进度
+	 * @return {[type]} [description]
+	 */
+	Video.prototype.buffer = function () {
+	    var self = this;
+	    var max = self.wrapper.find('.qhv-p-sliderbar').width();
+	    var buffered = self.video.buffered;
+	    var start = void 0,
+	        end = void 0;
+	    var bufferedDuration = 0;
+	    var duration = self.video.duration;
+
+	    for (var i = 0, len = buffered.length; i < len; i++) {
+	        start = buffered.start(i);
+	        end = buffered.end(i);
+	        if (end > duration) {
+	            end = duration;
+	        }
+	        bufferedDuration += end - start;
+	    }
+	    self.wrapper.find('.qhv-slider-buffer').width(bufferedDuration / duration * max);
+	};
+	/**
+	 * android下video加载失败的事件
+	 */
+	Video.prototype.addErrorListener = function () {
+	    var self = this;
+	    var video = self.video;
+
+	    var loadCount = 0;
+
+	    video.addEventListener('error', function () {
+
+	        if (++loadCount < 4) {
+	            video.load();
+	        }
+	    }, false);
+	};
+	/**
+	 * android下video加载元数据的事件
+	 */
+	Video.prototype.addAndroidLoadedDataListener = function () {
+	    var self = this;
+	    var video = self.video;
+	    video.addEventListener('loadedmetadata', function () {
+
+	        self.setDuration(formatTime.format(self.video.duration));
+	        self.updatePlayTime(self.video.duration);
+	        self.changeStatus();
+	        self.addAndroidListener();
+
+	        self.androidOn();
+	    }, false);
+	};
+	/**
+	 * android下才需要监听这些事件
+	 */
+	Video.prototype.addAndroidListener = function () {
+
+	    var self = this;
+	    var video = self.video;
+
+	    var $progressbar = self.wrapper.find('.qhv-progressbar .qhv-sliderbar');
+	    var $overlay = self.wrapper.find('.qhv-overlay');
+	    var $ctrls = self.wrapper.find('.qhv-ctrls');
+	    var $sliderbar = $progressbar.find('.qhv-slider');
+
+	    video.addEventListener('loadstart', function () {
+	        self.waiting();
+	    }, false);
+
+	    video.addEventListener('waiting', function () {
+	        self.waiting();
+	    }, false);
+
+	    video.addEventListener('canplay', function () {
+	        self.loaded();
+	    }, false);
+
+	    video.addEventListener('ended', function () {
+	        self.ended();
+	    }, false);
+
+	    video.addEventListener('pause', function () {
+	        self.showCtrls();
+	    }, false);
+
+	    video.addEventListener('seeking', function () {
+	        self.waiting();
+	    }, false);
+
+	    video.addEventListener('seeked', function () {
+	        video.paused ? self.paused() : self.play();
+	    }, false);
+
+	    video.addEventListener('canplaythrough', function () {}, false);
+
+	    video.addEventListener('playing', function () {}, false);
+
+	    video.addEventListener('play', function () {}, false);
+
+	    video.addEventListener('progress', function (ev) {}, false);
+
+	    // video.addEventListener('durationchange', type, false);
+	    // video.addEventListener('fullscreenchange', type, false);
+
+	    // 不能触发waiting事件，因为有时候播放正常，缓冲加载足够播放的数据，但是仍然会出现suspend的情况
+	    video.addEventListener('suspend', function () {}, false);
+
+	    video.addEventListener('abort', function () {}, false);
+
+	    video.addEventListener('emptied', function () {}, false);
+
+	    // 失速
+	    video.addEventListener('stalled', function () {
+	        // 如果已经点击播放了，再出现stalled则触发waiting事件
+	        if (self.firstplay) {
+	            self.waiting();
+	        }
+	    }, false);
+
+	    // 视频播放的进度
+	    video.addEventListener('timeupdate', function (ev) {
+
+	        var max = $progressbar.width() - $sliderbar.width();
+	        self.updatePlayTime(video.currentTime);
+	        self.updateSliderbar($progressbar, video.currentTime / video.duration * max);
+	    }, false);
+	};
+	/**
+	 * android的事件绑定
+	 * @return {[type]} [description]
+	 */
+	Video.prototype.androidOn = function () {
+	    var self = this;
+
+	    var video = self.video;
+	    var wrapper = self.wrapper;
+
+	    var duration = video.duration;
+
+	    // 播放进度条
+	    var $progressbar = wrapper.find('.qhv-progressbar .qhv-sliderbar');
+	    var $poffset = $progressbar.offset() || { left: 0 };
+	    var $slider = $progressbar.find('.qhv-slider');
+	    var $sliderbg = $progressbar.find('.qhv-slider-bg');
+
+	    var pStartX = 0;
+	    var pStartL = 0;
+
+	    var startY = 0;
+	    var startX = 0;
+	    var moveX = 0;
+
+	    var moved = false;
+
+	    // 点击播放暂停按钮
+	    self.wrapper.on('touchstart', '.qhv-playpausebtn', function (ev) {
+
+	        var $playpausebtn = wrapper.find('.qhv-playpausebtn');
+	        self.firstplay = true;
+
+	        // 已经播放结束后再次点击播放按钮即重播
+	        if (self.isEnded) {
 	            self.isEnded = false;
-	            self.ctrlsIsShow = false;
+	            video.currentTime = 0;
+	            self.updateSliderbar(wrapper.find('.qhv-p-sliderbar').closest('.qhv-sliderbar'), 0);
+	        }
 
-	            this.init();
-	        };
+	        if (video.paused) {
+	            video.play();
+	            $playpausebtn.removeClass('qhv-play-btn').addClass('qhv-pause-btn');
+	        } else {
+	            video.pause();
+	            $playpausebtn.removeClass('qhv-pause-btn').addClass('qhv-play-btn');
+	        }
+	    });
+	    // 点击显示隐藏控制条
 
-	        __webpack_require__(1);
-	        __webpack_require__(6);
+	    self.wrapper.on('touchstart', '.qhv-overlay', function (ev) {
 
-	        var ua = navigator.userAgent.toLowerCase(),
-	            isIOS = /iphone|ipad/.test(ua),
-	            isAPP = !isIOS && ua.indexOf("mso_app") != -1;
+	        ev.stopPropagation();
 
-	        var formatTime = __webpack_require__(7);
-	        var requestAnimate = __webpack_require__(8);
-	        var fullscreen = __webpack_require__(9);
+	        if (ev.target !== this) {
+	            return;
+	        }
 
-	        Video.prototype.init = function () {
-	            var self = this;
+	        startY = ev.touches[0].screenY;
+	        startX = ev.touches[0].screenX;
 
-	            self.renderVideo();
-	        };
-	        /**
-	         * 拼接video的sources的字符串
-	         * @param  {Array} sourcesArr 配置的sources的数组
-	         * @return {String}            sources的字符串
-	         */
-	        Video.prototype.pureSources = function (sourcesArr) {
-	            var sources = '';
-	            sourcesArr.forEach(function (v) {
-	                sources += '<source src="' + v + '"></source>';
-	            });
-	            return sources;
-	        };
-	        /**
-	         * 拼接video高宽的字符串
-	         * @param  {Number} width  高
-	         * @param  {Number} height 宽
-	         * @return {String}        高宽拼接后的字符串
-	         */
-	        Video.prototype.pureVideoWH = function (width, height) {
+	        moved = false;
+	        moveX = 0;
+	    }).on('touchmove', '.qhv-overlay', function (ev) {
 
-	            if (!height) {
-	                return ' width="' + width + '"';
-	            }
+	        ev.stopPropagation();
 
-	            if (height) {
-	                return ' width="' + width + '" height="' + height + '"';
-	            }
+	        var $this = $(this);
 
-	            return '';
-	        };
-	        /**
-	         * 拼接v-box高宽的字符串
-	         * @param  {Number} width  高
-	         * @param  {Number} height 宽
-	         * @return {String}        高宽拼接后的字符串
-	         */
-	        Video.prototype.pureBoxWH = function (width, height) {
-	            if (!height) {
-	                return ' style="width:' + width + 'px;"';
-	            }
-	            if (width && height) {
-	                return ' style="width:' + width + 'px;height:' + height + 'px"';
-	            }
-	            return '';
-	        };
-	        /**
-	         * 拼接video的poster字符串
-	         * @param  {String} poster poster的地址
-	         * @return {String}        拼接后的字符串
-	         */
-	        Video.prototype.purePoster = function (poster) {
-	            if (poster) {
-	                return 'poster=' + poster;
-	            }
-	            return '';
-	        };
-	        /**
-	         * 拼接自定义控制条字符串
-	         * @param  {Boolean} isIOS  是不是ios系统
-	         * @return {String}        拼接后的字符串
-	         */
-	        Video.prototype.pureCtrls = function (isIOS) {
-	            if (!isIOS) {
-	                return '<qhvdiv class="qhv-ctrls">\n                    <qhvdiv class="qhv-ctrls-box">\n                        <qhvdiv class="qhv-ctrl qhv-playpausebtn qhv-play-btn"></qhvdiv>\n                        <qhvdiv class="qhv-ctrl qhv-progressbar">\n                            <qhvdiv class="qhv-sliderbar qhv-p-sliderbar">\n                                <qhvdiv class="qhv-slider-buffer"></qhvdiv>\n                                <qhvdiv class="qhv-slider-bg"></qhvdiv>\n                                <qhvdiv class="qhv-slider qhv-p-slider"></qhvdiv>\n                            </qhvdiv>\n                            <qhvdiv class="qhv-current-time">00:00</qhvdiv>\n                            <qhvdiv class="qhv-sep">/</qhvdiv>\n                            <qhvdiv class="qhv-duration">00:00</qhvdiv>\n                        </qhvdiv>\n                        <qhvdiv class="qhv-ctrl qhv-screen qhv-fullscreen">全屏</qhvdiv>\n                    </qhvdiv>\n                </qhvdiv>';
-	            }
+	        if (ev.target !== this || !$this.hasClass('qhv-full-screen')) {
+	            return;
+	        }
 
-	            return '';
-	        };
+	        moveX = (ev.touches[0].screenX - startX) / 2 + $sliderbg.width();
+	        moveX = Math.min($progressbar.width(), Math.max(0, moveX));
 
-	        Video.prototype.purePlaybtn = function () {
+	        moved = true;
+	    }).on('touchend', '.qhv-overlay', function (ev) {
 
-	            return '<qhvdiv class="qhv-overlay-btn">\n                <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> \n            </qhvdiv>';
-	        };
-	        /**
-	         * 处理ios系统，如果是ios添加qhv-ios值
-	         * @param  {Boolean} isIOS  是不是ios系统       
-	         */
-	        Video.prototype.handleIOS = function (isIOS) {
-	            var _self = this;
-	            isIOS ? _self.wrapper.addClass('qhv-ios') : '';
-	        };
-	        /**
-	         * 拼接video字符串
-	         * @param  {String} videoId   video标签的id值
-	         * @param  {String} src       video标签src值
-	         * @param  {String} source    video标签下的source
-	         * @param  {String} videoWH   video标签的高宽
-	         * @param  {String} boxWH     v-box的高宽
-	         * @param  {String} poster    video标签的poster
-	         * @param  {String} ctrls     自定义控制条
-	         * @return {String}           拼接后的字符串
-	         */
-	        Video.prototype.pureVideo = function (videoId, src, source, videoWH, boxWH, poster, ctrls, playbtn) {
-	            return '<qhvdiv class="qhv-v-box" ' + boxWH + '>\n                <video id="' + videoId + '" src="' + src + '" ' + poster + ' ' + videoWH + '>' + source + '您的浏览器不支持video标签</video>\n                <qhvdiv class="qhv-overlay">\n                    ' + ctrls + '\n                    ' + playbtn + '\n                </qhvdiv>\n            </qhvdiv>';
-	        };
-	        Video.prototype.handleWH = function (width, height) {
-	            var winW = window.innerWidth,
-	                calcH = 0,
-	                calcW = 0,
-	                scale = 1;
+	        ev.stopPropagation();
 
-	            if (width >= winW) {
-	                calcW = Math.min(width, winW);
-	                calcH = winW / width * height;
-	            } else {
-	                calcW = Math.max(width, winW);
-	                calcH = width / winW * height;
-	            }
+	        if (ev.target !== this || !self.firstplay) {
+	            return;
+	        }
 
-	            return { w: calcW, h: calcH };
-	        };
-	        /**
-	         * 渲染video标签
-	         * @return {[type]} [description]
-	         */
-	        Video.prototype.renderVideo = function () {
-	            var self = this,
-	                options = self.options,
-	                source = '',
-	                video = '',
-	                videoWH = 'width="100%"',
-	                boxWH = '',
-	                poster = '',
-	                ctrls = '',
-	                playBtn = '',
-	                isios = isIOS,
-	                oWH = null,
-	                src = options.sources[0],
-	                autoPlay = options.autoPlay ? ' autoPlay' : '';
-
-	            self.handleIOS(isios);
-
-	            oWH = self.handleWH(options.width, options.height);
-
-	            source = self.pureSources(options.sources);
-	            videoWH = self.pureVideoWH(oWH.w, oWH.h);
-	            boxWH = self.pureBoxWH(oWH.w, oWH.h);
-	            poster = self.purePoster(options.poster);
-	            ctrls = self.pureCtrls(isios);
-	            playBtn = self.purePlaybtn(isios);
-	            video = self.pureVideo(self.videoId, src, source, videoWH, boxWH, poster, ctrls, playBtn);
-
-	            $(video).appendTo(self.wrapper);
-
-	            self.video = document.getElementById(self.videoId);
-
-	            $(self.video).ready(function () {
-	                self.renderControls();
-	                self.video.volume = self.volume;
-	            });
-
-	            self.addListener();
-	        };
-
-	        Video.prototype.setDuration = function () {
-	            var duration = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
-
-	            var self = this;
-	            self.wrapper.find('.qhv-duration').html(duration);
-	        };
-	        /**
-	         * 渲染自定义控件
-	         * @return {[type]} [description]
-	         */
-	        Video.prototype.renderControls = function () {
-	            var self = this;
-	            if (self.options.autoPlay) {
-	                self.video.play();
-	                self.firstplay = true;
-	            }
-
-	            self.wrapper.find('.qhv-ctrls').css('opacity', 1);
-	        };
-	        /**
-	         * 更新视频播放时长
-	         * @param  {Number} time 当前视频播放的时长
-	         * @return {[type]}      [description]
-	         */
-	        Video.prototype.updatePlayTime = function (time) {
-	            var self = this;
-	            self.wrapper.find('.qhv-current-time').html(formatTime.format(time));
-	        };
-	        /**
-	         * 更新滑块条位置
-	         * @param  {Number} l 进度条位置
-	         * @param  {Object} sliderbar 需要更新滑块的对象
-	         * @return {[type]}   [description]
-	         */
-	        Video.prototype.updateSliderbar = function (sliderbar, l) {
-
-	            var self = this;
-	            var $slider = sliderbar.find('.qhv-slider');
-	            $slider.css('left', l);
-	            sliderbar.find('.qhv-slider-bg').width(l + $slider.width() / 2);
-	        };
-
-	        Video.prototype.buffer = function () {
-	            var self = this;
-	            var max = self.wrapper.find('.qhv-p-sliderbar').width();
-	            var buffered = self.video.buffered;
-	            var start = void 0,
-	                end = void 0;
-	            var bufferedDuration = 0;
-	            var duration = self.video.duration;
-
-	            for (var i = 0, len = buffered.length; i < len; i++) {
-	                start = buffered.start(i);
-	                end = buffered.end(i);
-	                if (end > duration) {
-	                    end = duration;
-	                }
-	                bufferedDuration += end - start;
-	            }
-	            self.wrapper.find('.qhv-slider-buffer').width(bufferedDuration / duration * max);
-	        };
-	        /**
-	         * 添加自定义控件上的事件
-	         * @return {[type]} [description]
-	         */
-	        Video.prototype.on = function () {
-	            var self = this;
-	            var video = self.video;
-	            var wrapper = self.wrapper[0];
-	            var duration = video.duration;
-	            // 播放进度条
-	            var $progressbar = self.wrapper.find('.qhv-progressbar .qhv-sliderbar');
-	            var $poffset = $progressbar.offset() || { left: 0 };
-	            var $slider = $progressbar.find('.qhv-slider');
-	            var $sliderbg = $progressbar.find('.qhv-slider-bg');
-
-	            var pStartX = 0;
-	            var pStartL = 0;
-	            var vStartX = 0;
-	            var vStartL = 0;
-
-	            var startY = 0;
-	            var startX = 0;
-	            var moveX = 0;
-
-	            var moved = false;
-
-	            // 点击播放暂停按钮
-	            self.wrapper.on('touchstart', '.qhv-playpausebtn', function (ev) {
-
-	                var $playpausebtn = self.wrapper.find('.qhv-playpausebtn');
-	                self.firstplay = true;
-
-	                // 已经播放结束后再次点击播放按钮即重播
-	                if (self.isEnded) {
-	                    self.isEnded = false;
-	                    video.currentTime = 0;
-	                    self.updateSliderbar(self.wrapper.find('.qhv-p-sliderbar').closest('.qhv-sliderbar'), 0);
-	                }
-
-	                if (video.paused) {
-	                    video.play();
-	                    $playpausebtn.removeClass('qhv-play-btn').addClass('qhv-pause-btn');
-	                } else {
-	                    video.pause();
-	                    $playpausebtn.removeClass('qhv-pause-btn').addClass('qhv-play-btn');
-	                }
-	            })
-	            // 点击显示隐藏控制条
-	            .on('touchstart', '.qhv-overlay', function (ev) {
-	                ev.stopPropagation();
-	                if (ev.target !== this) {
-	                    return;
-	                }
-	                startY = ev.touches[0].screenY;
-	                startX = ev.touches[0].screenX;
-
-	                moved = false;
-	                moveX = 0;
-	            }).on('touchmove', '.qhv-overlay', function (ev) {
-	                ev.stopPropagation();
-	                var $this = $(this);
-
-	                if (ev.target !== this || !$this.hasClass('qhv-full-screen')) {
-	                    return;
-	                }
-
-	                moveX = (ev.touches[0].screenX - startX) / 2 + $sliderbg.width();
-
-	                moved = true;
-
-	                moveX = Math.min($progressbar.width(), Math.max(0, moveX));
-	            }).on('touchend', '.qhv-overlay', function (ev) {
-	                ev.stopPropagation();
-	                if (ev.target !== this || !self.firstplay) {
-	                    return;
-	                }
-
-	                if (moved) {
-	                    self.showCtrls();
-	                    video.currentTime = moveX / $progressbar.width() * duration;
-	                    self.updateSliderbar($progressbar, moveX);
-	                    return;
-	                }
-
-	                self.ctrlsIsShow ? self.hideCtrls() : self.showCtrls();
-	            })
-
-	            // 点击播放进度条
-	            .on('touchstart', '.qhv-p-sliderbar', function (ev) {
-
-	                var barW = $progressbar.width();
-	                var sliderW = $slider.width();
-	                var sliderL = $poffset.left + sliderW / 2;
-	                var progressMax = barW - sliderW;
-
-	                var offset = ev.touches[0].pageX - sliderL;
-
-	                offset = Math.min(Math.max(offset, 0), progressMax);
-	                video.currentTime = offset / progressMax * duration;
-	                self.updateSliderbar($(this).closest('.qhv-sliderbar'), offset);
-	            })
-	            // 进度条滑块
-	            .on('touchstart', '.qhv-p-slider', function (ev) {
-	                ev.stopPropagation();
-	                pStartX = ev.touches[0].pageX;
-	                pStartL = parseInt($(this).css('left'));
-	            }).on('touchmove', '.qhv-p-slider', function (ev) {
-	                ev.stopPropagation();
-
-	                var offset = pStartL + ev.touches[0].pageX - pStartX;
-
-	                var barW = $progressbar.width();
-	                var sliderW = $slider.width();
-	                var sliderL = $poffset.left + sliderW / 2;
-	                var progressMax = barW - sliderW;
-
-	                offset = Math.min(Math.max(offset, 0), progressMax);
-
-	                self.updateSliderbar($(this).closest('.qhv-sliderbar'), offset);
-
-	                video.currentTime = offset / progressMax * duration;
-	            });
-	        };
-	        Video.prototype.showCtrls = function () {
-	            var self = this;
-	            var $wrapper = self.wrapper;
-
-	            var $overlay = $wrapper.find('.qhv-overlay');
-	            var $ctrl = $overlay.find('.qhv-ctrls');
-	            var $midbtn = $overlay.find('.qhv-overlay-btn');
-
-	            $midbtn.show();
-	            $ctrl.css('opacity', 1);
-	            self.ctrlsIsShow = true;
-	        };
-
-	        Video.prototype.hideCtrls = function () {
-	            var self = this;
-	            var $wrapper = self.wrapper;
-
-	            var $overlay = $wrapper.find('.qhv-overlay');
-	            var $ctrl = $overlay.find('.qhv-ctrls');
-	            var $midbtn = $overlay.find('.qhv-overlay-btn');
-
-	            $midbtn.hide();
-	            $ctrl.css('opacity', 0);
-	            self.ctrlsIsShow = false;
-	        };
-
-	        Video.prototype.play = function () {
-	            var self = this;
-
-	            self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-play-btn qhv-loading').addClass('qhv-pause-btn');
-	        };
-	        Video.prototype.paused = function () {
-	            var self = this;
-
-	            self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn qhv-loading').addClass('qhv-play-btn');
-	        };
-	        Video.prototype.loaded = function () {
-	            var self = this;
-	            var video = self.video;
-
-	            if (video.paused) {
-	                self.wrapper.find('.qhv-playpausebtn').addClass('qhv-play-btn').removeClass('qhv-loading');
-	            } else {
-	                self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-loading');
-	            }
-	        };
-	        Video.prototype.ended = function () {
-	            var self = this;
-
+	        if (moved) {
 	            self.showCtrls();
+	            video.currentTime = moveX / $progressbar.width() * duration;
+	            self.updateSliderbar($progressbar, moveX);
+	            return;
+	        }
+
+	        self.ctrlsIsShow ? self.hideCtrls() : self.showCtrls();
+	    })
+	    // 点击播放进度条
+	    .on('touchstart', '.qhv-p-sliderbar', function (ev) {
+
+	        var barW = $progressbar.width();
+	        var sliderW = $slider.width();
+	        var sliderL = $poffset.left + sliderW / 2;
+	        var progressMax = barW - sliderW;
+
+	        var offset = ev.touches[0].pageX - sliderL;
+
+	        offset = Math.min(Math.max(offset, 0), progressMax);
+
+	        video.currentTime = offset / progressMax * duration;
+
+	        self.updateSliderbar($(this).closest('.qhv-sliderbar'), offset);
+	    })
+	    // 进度条滑块
+	    .on('touchstart', '.qhv-p-slider', function (ev) {
+
+	        ev.stopPropagation();
+
+	        pStartX = ev.touches[0].pageX;
+	        pStartL = parseInt($(this).css('left'));
+	    }).on('touchmove', '.qhv-p-slider', function (ev) {
+
+	        ev.stopPropagation();
+
+	        var offset = pStartL + ev.touches[0].pageX - pStartX;
+
+	        var barW = $progressbar.width();
+	        var sliderW = $slider.width();
+	        var sliderL = $poffset.left + sliderW / 2;
+	        var progressMax = barW - sliderW;
+
+	        offset = Math.min(Math.max(offset, 0), progressMax);
+
+	        video.currentTime = offset / progressMax * duration;
+
+	        self.updateSliderbar($(this).closest('.qhv-sliderbar'), offset);
+	    });
+	};
+	/**
+	 * 添加自定义控件上的事件
+	 * @return {[type]} [description]
+	 */
+	Video.prototype.on = function () {
+	    var self = this;
+
+	    var video = self.video;
+
+	    // 点击播放暂停按钮
+	    // 不能用touchstart事件,ios9.1下点击播放无反映。分析是ios再不点击播放的情况下是不加载资源的
+	    self.wrapper.on('click', '.qhv-playpausebtn', function (ev) {
+	        video.play();
+	    });
+	};
+	Video.prototype.showCtrls = function () {
+	    var self = this;
+	    var $wrapper = self.wrapper;
+
+	    var $overlay = $wrapper.find('.qhv-overlay');
+	    var $ctrl = $overlay.find('.qhv-ctrls');
+	    var $midbtn = $overlay.find('.qhv-overlay-btn');
+
+	    $midbtn.show();
+	    $ctrl.css('opacity', 1);
+	    self.ctrlsIsShow = true;
+	};
+
+	Video.prototype.hideCtrls = function () {
+	    var self = this;
+	    var $wrapper = self.wrapper;
+
+	    var $overlay = $wrapper.find('.qhv-overlay');
+	    var $ctrl = $overlay.find('.qhv-ctrls');
+	    var $midbtn = $overlay.find('.qhv-overlay-btn');
+
+	    $midbtn.hide();
+	    $ctrl.css('opacity', 0);
+	    self.ctrlsIsShow = false;
+	};
+
+	Video.prototype.play = function () {
+	    var self = this;
+
+	    self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-play-btn qhv-loading').addClass('qhv-pause-btn');
+	};
+	Video.prototype.paused = function () {
+	    var self = this;
+
+	    self.wrapper.find('.qhv-playpausebtn').removeClass('qhv-pause-btn qhv-loading').addClass('qhv-play-btn');
+	};
+	Video.prototype.loaded = function () {
+	    var self = this;
+	    var video = self.video;
+
+	    if (video.paused) {
+	        self.wrapper.find('.qhv-playpausebtn').addClass('qhv-play-btn').removeClass('qhv-loading');
+	    } else {
+	        self.wrapper.find('.qhv-playpausebtn').addClass('qhv-pause-btn').removeClass('qhv-loading');
+	    }
+	};
+	Video.prototype.ended = function () {
+	    var self = this;
+
+	    self.showCtrls();
+	    self.paused();
+	    self.isEnded = true;
+	};
+	Video.prototype.waiting = function () {
+	    var self = this;
+
+	    self.showCtrls();
+	    self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-play-btn qhv-pause-btn').addClass('qhv-loading');
+	};
+
+	/**
+	 * 改变播放状态
+	 * @return {[type]} [description]
+	 */
+	Video.prototype.changeStatus = function () {
+	    var self = this,
+	        $self = $(self),
+	        video = self.video,
+	        lastVideoTime = video.currentTime,
+	        showTime = 0,
+	        lastTime = 0;
+
+	    function changeStatus(time) {
+	        self.buffer();
+	        // 如果是暂停状态
+	        if (video.paused) {
+	            lastTime = time;
+	            showTime = time;
 	            self.paused();
-	            self.isEnded = true;
-	        };
-	        Video.prototype.waiting = function () {
-	            var self = this;
-
-	            self.showCtrls();
-	            self.wrapper.find('.qhv-overlay-btn .qhv-playpausebtn').removeClass('qhv-play-btn qhv-pause-btn').addClass('qhv-loading');
-	        };
-
-	        /**
-	         * 改变播放状态
-	         * @return {[type]} [description]
-	         */
-	        Video.prototype.changeStatus = function () {
-	            var self = this,
-	                $self = $(self),
-	                video = self.video,
-	                lastVideoTime = video.currentTime,
-	                showTime = 0,
-	                lastTime = 0;
-
-	            function changeStatus(time) {
-	                self.buffer();
-	                // 如果是暂停状态
-	                if (video.paused) {
-	                    lastTime = time;
-	                    showTime = time;
-	                    self.paused();
+	        } else {
+	            // 间隔300ms检查一次， 如果当前的播放时间和上次的播放时间不相同那就是正常播放
+	            if (time - lastTime >= 300) {
+	                lastTime = time;
+	                if (lastVideoTime != video.currentTime) {
+	                    lastVideoTime = video.currentTime;
+	                    if (self.isEnded) {
+	                        self.ended();
+	                        return;
+	                    }
+	                    self.play();
 	                } else {
-	                    // 间隔300ms检查一次， 如果当前的播放时间和上次的播放时间不相同那就是正常播放
-	                    if (time - lastTime >= 300) {
-	                        lastTime = time;
-	                        if (lastVideoTime != video.currentTime) {
-	                            lastVideoTime = video.currentTime;
-	                            if (self.isEnded) {
-	                                self.ended();
-	                                return;
-	                            }
-	                            self.play();
-	                        } else {
-	                            self.waiting();
-	                        }
-	                    }
-	                    // 如果是正常播放并且控件是显示的，那隔5s后隐藏控件
-	                    if (lastVideoTime != video.currentTime) {
-	                        if (self.ctrlsIsShow) {
-	                            if (time - showTime >= 3000) {
-	                                self.hideCtrls();
-	                            }
-	                        } else {
-	                            showTime = time;
-	                        }
-	                    }
-	                }
-
-	                requestAnimate(changeStatus);
-	            }
-
-	            requestAnimate(changeStatus);
-	        };
-	        /**
-	         * 监听video自身的一些事件
-	         */
-	        Video.prototype.addListener = function () {
-
-	            var self = this;
-	            var $self = $(self);
-	            var video = self.video;
-	            var wrapper = self.wrapper[0];
-	            var $progressbar = self.wrapper.find('.qhv-progressbar .qhv-sliderbar');
-	            var $overlay = self.wrapper.find('.qhv-overlay');
-	            var $ctrls = self.wrapper.find('.qhv-ctrls');
-	            var $sliderbar = $progressbar.find('.qhv-slider');
-
-	            var $screen = self.wrapper.find('.qhv-screen');
-
-	            var fullscreenElem = video;
-
-	            function toggleScreen(type) {
-	                if (type === 1) {
-	                    $overlay.add($ctrls).css('zIndex', 2147483647);
-	                    $overlay.addClass('qhv-full-screen');
-	                    $screen.removeClass('qhv-fullscreen').addClass('qhv-exit-fullscreen').html('退出');
-	                    return;
-	                }
-	                $overlay.add($ctrls).css('zIndex', '');
-	                $overlay.removeClass('qhv-full-screen');
-	                $screen.addClass('qhv-fullscreen').removeClass('qhv-exit-fullscreen').html('全屏');
-	                self.buffer();
-	            }
-
-	            if (isAPP) {
-	                fullscreenElem = wrapper;
-	            }
-
-	            fullscreen(self.wrapper, 'click', '.qhv-screen', fullscreenElem, toggleScreen);
-
-	            // 视频播放的进度
-	            video.addEventListener('timeupdate', function (ev) {
-
-	                var max = $progressbar.width() - $sliderbar.width();
-	                self.updatePlayTime(video.currentTime);
-	                self.updateSliderbar($progressbar, video.currentTime / video.duration * max);
-	            }, false);
-
-	            var loadCount = 0;
-
-	            video.addEventListener('error', function () {
-	                if (++loadCount < 4) {
-	                    video.load();
-	                }
-	            }, false);
-
-	            video.addEventListener('loadstart', function () {
-	                self.waiting();
-	            }, false);
-
-	            video.addEventListener('waiting', function () {
-	                self.waiting();
-	            }, false);
-
-	            video.addEventListener('canplay', function () {
-	                self.loaded();
-	            }, false);
-
-	            video.addEventListener('ended', function () {
-	                self.ended();
-	            }, false);
-
-	            video.addEventListener('pause', function () {
-	                self.showCtrls();
-	            }, false);
-
-	            video.addEventListener('seeking', function () {
-	                self.waiting();
-	            }, false);
-
-	            video.addEventListener('seeked', function () {
-	                video.paused ? self.paused() : self.play();
-	            }, false);
-
-	            video.addEventListener('canplaythrough', function () {}, false);
-
-	            video.addEventListener('playing', function () {}, false);
-
-	            video.addEventListener('play', function () {}, false);
-
-	            video.addEventListener('progress', function (ev) {}, false);
-
-	            // video.addEventListener('durationchange', type, false);
-	            // video.addEventListener('fullscreenchange', type, false);
-
-	            // 不能触发waiting事件，因为有时候播放正常，缓冲加载足够播放的数据，但是仍然会出现suspend的情况
-	            video.addEventListener('suspend', function () {}, false);
-
-	            video.addEventListener('abort', function () {}, false);
-
-	            video.addEventListener('emptied', function () {}, false);
-
-	            // 失速
-	            video.addEventListener('stalled', function () {
-	                // 如果已经点击播放了，再出现stalled则触发waiting事件
-	                if (self.firstplay) {
 	                    self.waiting();
 	                }
-	            }, false);
-
-	            video.addEventListener('loadedmetadata', function () {
-	                if (!isIOS) {
-	                    self.setDuration(formatTime.format(self.video.duration));
-	                    self.updatePlayTime(self.video.duration);
-	                    self.changeStatus();
+	            }
+	            // 如果是正常播放并且控件是显示的，那隔5s后隐藏控件
+	            if (lastVideoTime != video.currentTime) {
+	                if (self.ctrlsIsShow) {
+	                    if (time - showTime >= 3000) {
+	                        self.hideCtrls();
+	                    }
+	                } else {
+	                    showTime = time;
 	                }
-	                self.on();
-	            }, false);
-	        };
+	            }
+	        }
 
-	        window.Video = Video;
-	    })();
-	} catch (e) {
-	    alert('error');
-	}
+	        requestAnimate(changeStatus);
+	    }
+
+	    requestAnimate(changeStatus);
+	};
+
+	/**
+	 * 全屏
+	 * @return {[type]} [description]
+	 */
+	Video.prototype.fullscreen = function () {
+	    var self = this;
+	    var video = self.video;
+	    var $wrapper = self.wrapper;
+	    var wrapper = $wrapper[0];
+
+	    var $ctrls = $wrapper.find('.qhv-ctrls');
+	    var $overlay = $wrapper.find('.qhv-overlay');
+	    var $screen = $wrapper.find('.qhv-screen');
+
+	    var fullscreenElem = video;
+
+	    function toggleScreen(type) {
+	        if (type === 1) {
+	            $overlay.add($ctrls).css('zIndex', 2147483647);
+	            $overlay.addClass('qhv-full-screen');
+	            $screen.removeClass('qhv-fullscreen').addClass('qhv-exit-fullscreen').html('退出');
+	            return;
+	        }
+	        $overlay.add($ctrls).css('zIndex', '');
+	        $overlay.removeClass('qhv-full-screen');
+	        $screen.addClass('qhv-fullscreen').removeClass('qhv-exit-fullscreen').html('全屏');
+	        self.buffer();
+	    }
+
+	    if (isAPP) {
+	        fullscreenElem = wrapper;
+	    }
+
+	    fullscreen(self.wrapper, 'click', '.qhv-screen', fullscreenElem, toggleScreen);
+	};
+
+	/**
+	 * video加载元数据的事件
+	 */
+	Video.prototype.addLoadedDataListener = function () {
+	    var self = this;
+	    var video = self.video;
+
+	    video.addEventListener('loadedmetadata', function () {
+	        self.on();
+	    }, false);
+	};
+
+	window.Video = Video;
 
 /***/ },
 /* 1 */
@@ -692,7 +658,7 @@
 
 
 	// module
-	exports.push([module.id, "qhvdiv {\r\n    display: block;\r\n}\r\n\r\n:-webkit-full-screen {\r\n    z-index: 21474836 !important;\r\n}\r\n/*全屏时隐藏控件  https://css-tricks.com/custom-controls-in-html5-video-full-screen/ */\r\n.qhv-v-box video::-webkit-media-controls-enclosure, .qhv-v-box video::-webkit-media-controls {\r\n    display:none !important;\r\n}\r\n\r\n.qhv-v-box {\r\n    position: relative;\r\n    width: 100%;\r\n    height: 100%;\r\n    font-size: 16px;\r\n}\r\n\r\n.qhv-v-box video {\r\n    position: relative;\r\n    display: block;\r\n}\r\n\r\n.qhv-overlay {\r\n    width: 100%;\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box {\r\n    width: 100%;\r\n    height: 100%;\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    line-height: 1em;\r\n}\r\n.qhv-ios .qhv-v-box .qhv-ctrls, .qhv-ios .qhv-v-box .qhv-volumebar {\r\n    display: none;\r\n}\r\n.qhv-v-box .qhv-ctrls {\r\n    width: 100%;\r\n    height: 2.5em;\r\n    padding: .625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: absolute;\r\n    left: 0;\r\n    bottom: 0;\r\n    background: rgba(0, 0, 0, .4);\r\n    opacity: 0;\r\n    font-size: .75em;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-playpausebtn {\r\n    width: 1em;\r\n    height: 1em;\r\n    color: #FFF;\r\n    font-size: 1em;\r\n    position: relative;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .5em solid transparent;\r\n    border-left: 1em solid #fff;\r\n    border-bottom: .5em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n}\r\n.qhv-v-box .qhv-ctrls-box .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n.qhv-v-box .qhv-progressbar {\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    padding-left: .833333334em;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg,\r\n.qhv-v-box .qhv-slider-buffer {\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg {\r\n    border-radius: .5em;\r\n    background-color: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-buffer {\r\n    background-color: #999;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-sliderbar {\r\n    width: 100%;\r\n    height: .625em;\r\n    padding-top: .25em;\r\n    position: relative;\r\n    border: 1px solid #aaa;\r\n    border-radius: .5em;\r\n    background: #333;\r\n    margin-top: .0625em;\r\n    -webkit-box-flex: 1;\r\n    display: -webkit-box;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-slider {\r\n    width: 2em;\r\n    height: 1em;\r\n    position: absolute;\r\n    top: -.0625em;\r\n    left: 0;\r\n    background-color: #fff;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-duration,\r\n.qhv-v-box .qhv-progressbar .qhv-current-time,\r\n.qhv-v-box .qhv-progressbar .qhv-sep {\r\n    color: #fff;\r\n    max-width: 4em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-current-time {\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n\r\n/*声音条*/\r\n\r\n.qhv-v-box .qhv-volumebar {\r\n    width: 1em;\r\n    height: 7.25em;\r\n    position: absolute;\r\n    left: 1em;\r\n    bottom: 1.5em;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-icon {\r\n    width: 1em;\r\n    height: 1em;\r\n    margin-bottom: .5em;\r\n    margin-top: .5em;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background: url(" + __webpack_require__(4) + ") no-repeat -16px -16px;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-muted {\r\n    background-position: -16px 0;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-sliderbar {\r\n    width: .25em;\r\n    height: 5.25em;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 50%;\r\n    margin-left: -.125em;\r\n    background: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-slider {\r\n    width: 100%;\r\n    height: 50%;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background-color: red;\r\n}\r\n\r\n\r\n/*全屏按钮*/\r\n\r\n.qhv-v-box .qhv-screen {\r\n    color: #fff;\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n/*视频上的暂停播放按钮*/\r\n\r\n.qhv-overlay-btn {\r\n    width: 3.125em;\r\n    height: 3.125em;\r\n    position: absolute;\r\n    top: 50%;\r\n    left: 50%;\r\n    margin-top: -1.5625em;\r\n    margin-left: -1.5625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n\r\n}\r\n\r\n\r\n.qhv-full-screen .qhv-overlay-btn {\r\n    width: 5em;\r\n    height: 5em;\r\n    margin-top: -2.5em;\r\n    margin-left: -2.5em;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-playpausebtn {\r\n    width: 100%;\r\n    height: 100%;\r\n    /*background: url(../images/bigplay.png) no-repeat;\r\n    background-size: cover;*/\r\n    border: .5em solid #fff;\r\n    border-radius: 50%;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-loading {\r\n    background-color: #fff;\r\n    width: 100%;\r\n    height: 100%;\r\n    border-radius: 100%;\r\n    -webkit-animation-fill-mode: both;\r\n    animation-fill-mode: both;\r\n    border: .5em solid #fff;\r\n    border-bottom-color: transparent;\r\n    background: transparent !important;\r\n    -webkit-animation: rotate 0.75s 0s linear infinite;\r\n    animation: rotate 0.75s 0s linear infinite;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n@keyframes rotate {\r\n    0% {\r\n        -webkit-transform: rotate(0deg);\r\n        transform: rotate(0deg);\r\n    }\r\n    50% {\r\n        -webkit-transform: rotate(180deg);\r\n        transform: rotate(180deg);\r\n    }\r\n    100% {\r\n        -webkit-transform: rotate(360deg);\r\n        transform: rotate(360deg);\r\n    }\r\n}\r\n\r\n.qhv-overlay-btn .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .8em solid transparent;\r\n    border-left: 1.4em solid #fff;\r\n    border-bottom: .8em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.8em;\r\n}\r\n.qhv-overlay-btn .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1.4em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.7em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}", ""]);
+	exports.push([module.id, "qhvdiv {\r\n    display: block;\r\n}\r\n\r\n:-webkit-full-screen {\r\n    z-index: 21474836 !important;\r\n}\r\n/*全屏时隐藏控件  https://css-tricks.com/custom-controls-in-html5-video-full-screen/ */\r\n.qhv-v-box video::-webkit-media-controls-enclosure, .qhv-v-box video::-webkit-media-controls, .qhv-v-box video::-webkit-media-controls-start-playback-button {\r\n  display: none !important;\r\n}\r\n\r\n.qhv-v-box {\r\n    position: relative;\r\n    width: 100%;\r\n    height: 100%;\r\n    font-size: 16px;\r\n}\r\n\r\n.qhv-v-box video {\r\n    position: relative;\r\n    display: block;\r\n}\r\n\r\n.qhv-overlay {\r\n    width: 100%;\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    z-index: 1000;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box {\r\n    width: 100%;\r\n    height: 100%;\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    line-height: 1em;\r\n}\r\n.qhv-ios .qhv-v-box .qhv-ctrls, .qhv-ios .qhv-v-box .qhv-volumebar {\r\n    display: none;\r\n}\r\n.qhv-v-box .qhv-ctrls {\r\n    width: 100%;\r\n    height: 2.5em;\r\n    padding: .625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: absolute;\r\n    left: 0;\r\n    bottom: 0;\r\n    background: rgba(0, 0, 0, .4);\r\n    opacity: 0;\r\n    font-size: .75em;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-playpausebtn {\r\n    width: 1em;\r\n    height: 1em;\r\n    color: #FFF;\r\n    font-size: 1em;\r\n    position: relative;\r\n}\r\n\r\n.qhv-v-box .qhv-ctrls-box .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .5em solid transparent;\r\n    border-left: 1em solid #fff;\r\n    border-bottom: .5em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n}\r\n.qhv-v-box .qhv-ctrls-box .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.5em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n.qhv-v-box .qhv-progressbar {\r\n    display: -webkit-box;\r\n    -webkit-box-flex: 1;\r\n    padding-left: .833333334em;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg,\r\n.qhv-v-box .qhv-slider-buffer {\r\n    height: 100%;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 0;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-bg {\r\n    border-radius: .5em;\r\n    background-color: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-slider-buffer {\r\n    background-color: #999;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-sliderbar {\r\n    width: 100%;\r\n    height: .625em;\r\n    padding-top: .25em;\r\n    position: relative;\r\n    border: 1px solid #aaa;\r\n    border-radius: .5em;\r\n    background: #333;\r\n    margin-top: .0625em;\r\n    -webkit-box-flex: 1;\r\n    display: -webkit-box;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-slider {\r\n    width: 2em;\r\n    height: 1em;\r\n    position: absolute;\r\n    top: -.0625em;\r\n    left: 0;\r\n    background-color: #fff;\r\n    border-radius: .5em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-duration,\r\n.qhv-v-box .qhv-progressbar .qhv-current-time,\r\n.qhv-v-box .qhv-progressbar .qhv-sep {\r\n    color: #fff;\r\n    max-width: 4em;\r\n}\r\n\r\n.qhv-v-box .qhv-progressbar .qhv-current-time {\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n\r\n/*声音条*/\r\n\r\n.qhv-v-box .qhv-volumebar {\r\n    width: 1em;\r\n    height: 7.25em;\r\n    position: absolute;\r\n    left: 1em;\r\n    bottom: 1.5em;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-icon {\r\n    width: 1em;\r\n    height: 1em;\r\n    margin-bottom: .5em;\r\n    margin-top: .5em;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background: url(" + __webpack_require__(4) + ") no-repeat -16px -16px;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-volume-muted {\r\n    background-position: -16px 0;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-sliderbar {\r\n    width: .25em;\r\n    height: 5.25em;\r\n    position: absolute;\r\n    top: 0;\r\n    left: 50%;\r\n    margin-left: -.125em;\r\n    background: #fff;\r\n}\r\n\r\n.qhv-v-box .qhv-volumebar .qhv-v-slider {\r\n    width: 100%;\r\n    height: 50%;\r\n    position: absolute;\r\n    bottom: 0;\r\n    left: 0;\r\n    background-color: red;\r\n}\r\n\r\n\r\n/*全屏按钮*/\r\n\r\n.qhv-v-box .qhv-screen {\r\n    color: #fff;\r\n    padding-left: .625em;\r\n}\r\n\r\n\r\n/*视频上的暂停播放按钮*/\r\n\r\n.qhv-overlay-btn {\r\n    width: 3.125em;\r\n    height: 3.125em;\r\n    position: absolute;\r\n    top: 50%;\r\n    left: 50%;\r\n    margin-top: -1.5625em;\r\n    margin-left: -1.5625em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n\r\n}\r\n\r\n\r\n.qhv-full-screen .qhv-overlay-btn {\r\n    width: 5em;\r\n    height: 5em;\r\n    margin-top: -2.5em;\r\n    margin-left: -2.5em;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-playpausebtn {\r\n    width: 100%;\r\n    height: 100%;\r\n    /*background: url(../images/bigplay.png) no-repeat;\r\n    background-size: cover;*/\r\n    border: .5em solid #fff;\r\n    border-radius: 50%;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n    position: relative;\r\n}\r\n\r\n.qhv-overlay-btn .qhv-loading {\r\n    background-color: #fff;\r\n    width: 100%;\r\n    height: 100%;\r\n    border-radius: 100%;\r\n    -webkit-animation-fill-mode: both;\r\n    animation-fill-mode: both;\r\n    border: .5em solid #fff;\r\n    border-bottom-color: transparent;\r\n    background: transparent !important;\r\n    -webkit-animation: rotate 0.75s 0s linear infinite;\r\n    animation: rotate 0.75s 0s linear infinite;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}\r\n\r\n@keyframes rotate {\r\n    0% {\r\n        -webkit-transform: rotate(0deg);\r\n        transform: rotate(0deg);\r\n    }\r\n    50% {\r\n        -webkit-transform: rotate(180deg);\r\n        transform: rotate(180deg);\r\n    }\r\n    100% {\r\n        -webkit-transform: rotate(360deg);\r\n        transform: rotate(360deg);\r\n    }\r\n}\r\n\r\n.qhv-overlay-btn .qhv-play-btn:after {\r\n    width: 0;\r\n    height: 0;\r\n    border-top: .8em solid transparent;\r\n    border-left: 1.4em solid #fff;\r\n    border-bottom: .8em solid transparent;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.8em;\r\n}\r\n.qhv-overlay-btn .qhv-pause-btn:after {\r\n    width: 1em;\r\n    height: 1.4em;\r\n    border-left: .4em solid #fff;\r\n    border-right: .4em solid #fff;\r\n    content: '';\r\n    position: absolute;\r\n    left: 50%;\r\n    top: 50%;\r\n    margin-left: -.5em;\r\n    margin-top: -.7em;\r\n    box-sizing: border-box;\r\n    -webkit-box-sizing: border-box;\r\n}", ""]);
 
 	// exports
 
@@ -1037,6 +1003,20 @@
 /* 7 */
 /***/ function(module, exports) {
 
+	"use strict";
+
+	var ua = navigator.userAgent.toLowerCase(),
+	    isIOS = /iphone|ipad/.test(ua),
+	    isAPP = !isIOS && ua.indexOf("mso_app") != -1;
+	module.exports = {
+	  isIOS: isIOS,
+	  isAPP: isAPP
+	};
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
 	'use strict';
 
 	var FormatTime = function FormatTime() {};
@@ -1088,7 +1068,7 @@
 	module.exports = formatTime;
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1100,7 +1080,7 @@
 	}();
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1109,7 +1089,10 @@
 	var exitFullscreenArr = ['exitFullscreen', 'webkitExitFullscreen', 'mozCancelFullScreen', 'msExitFullscreen', 'oExitFullscreen'];
 	var fullscreenchangeArr = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'msfullscreenchange', 'ofullscreenchange'];
 	var fullscreenElementArr = ['fullscreenElement', 'webkitFullscreenElement', 'mozFullscreenElement', 'msFullscreenElement', 'ofullscreenchange'];
-	var Fullscreen = function Fullscreen(bindElem, event, selector, fullscreenElem, callback) {
+	var Fullscreen = function Fullscreen(bindElem, event, selector, fullscreenElem) {
+	    var callback = arguments.length <= 4 || arguments[4] === undefined ? function () {} : arguments[4];
+
+
 	    // 点击让wrapper元素全屏而不是让video元素全屏
 	    // 从而解决video全屏时native controls仍显示以及自定义控制条不显示的问题的
 	    // http://stackoverflow.com/questions/7130397/how-do-i-make-a-div-full-screen
@@ -1197,6 +1180,125 @@
 	};
 
 	module.exports = Fullscreen;
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var UA = __webpack_require__(7);
+	function GetVideoUI() {}
+	/**
+	 * 拼接video的sources的字符串
+	 * @param  {Array} sourcesArr 配置的sources的数组
+	 * @return {String}            sources的字符串
+	 */
+	GetVideoUI.prototype.pureSources = function (sourcesArr) {
+	    var sources = '';
+	    sourcesArr.forEach(function (v) {
+	        sources += '<source src="' + v + '"></source>';
+	    });
+	    return sources;
+	};
+	/**
+	 * 拼接video高宽的字符串
+	 * @param  {Number} width  高
+	 * @param  {Number} height 宽
+	 * @return {String}        高宽拼接后的字符串
+	 */
+	GetVideoUI.prototype.pureVideoWH = function (width, height) {
+
+	    if (!height) {
+	        return ' width="' + width + '"';
+	    }
+
+	    if (height) {
+	        return ' width="' + width + '" height="' + height + '"';
+	    }
+
+	    return '';
+	};
+	/**
+	 * 拼接v-box高宽的字符串
+	 * @param  {Number} width  高
+	 * @param  {Number} height 宽
+	 * @return {String}        高宽拼接后的字符串
+	 */
+	GetVideoUI.prototype.pureBoxWH = function (width, height) {
+	    if (!height) {
+	        return ' style="width:' + width + 'px;"';
+	    }
+	    if (width && height) {
+	        return ' style="width:' + width + 'px;height:' + height + 'px"';
+	    }
+	    return '';
+	};
+	/**
+	 * 拼接video的poster字符串
+	 * @param  {String} poster poster的地址
+	 * @return {String}        拼接后的字符串
+	 */
+	GetVideoUI.prototype.purePoster = function (poster) {
+	    if (poster) {
+	        return 'poster=' + poster;
+	    }
+	    return '';
+	};
+	/**
+	 * 拼接自定义控制条字符串
+	 * @param  {Boolean} isIOS  是不是ios系统
+	 * @return {String}        拼接后的字符串
+	 */
+	GetVideoUI.prototype.pureCtrls = function (isIOS) {
+	    if (!isIOS) {
+	        return '<qhvdiv class="qhv-ctrls">\n                    <qhvdiv class="qhv-ctrls-box">\n                        <qhvdiv class="qhv-ctrl qhv-playpausebtn qhv-play-btn"></qhvdiv>\n                        <qhvdiv class="qhv-ctrl qhv-progressbar">\n                            <qhvdiv class="qhv-sliderbar qhv-p-sliderbar">\n                                <qhvdiv class="qhv-slider-buffer"></qhvdiv>\n                                <qhvdiv class="qhv-slider-bg"></qhvdiv>\n                                <qhvdiv class="qhv-slider qhv-p-slider"></qhvdiv>\n                            </qhvdiv>\n                            <qhvdiv class="qhv-current-time">00:00</qhvdiv>\n                            <qhvdiv class="qhv-sep">/</qhvdiv>\n                            <qhvdiv class="qhv-duration">00:00</qhvdiv>\n                        </qhvdiv>\n                        <qhvdiv class="qhv-ctrl qhv-screen qhv-fullscreen">全屏</qhvdiv>\n                    </qhvdiv>\n                </qhvdiv>';
+	    }
+
+	    return '';
+	};
+
+	GetVideoUI.prototype.purePlaybtn = function () {
+
+	    return '<qhvdiv class="qhv-overlay-btn">\n                <qhvdiv class="qhv-playpausebtn qhv-play-btn"></qhvdiv> \n            </qhvdiv>';
+	};
+
+	/**
+	 * 拼接video字符串
+	 * @param  {String} videoId   video标签的id值
+	 * @param  {String} src       video标签src值
+	 * @param  {String} source    video标签下的source
+	 * @param  {Number} width     video宽
+	 * @param  {Number} height    video高
+	 * @param  {String} poster    video标签的poster
+	 * @param  {String} ctrls     自定义控制条
+	 * @return {String}           拼接后的字符串
+	 */
+	GetVideoUI.prototype.getVideo = function () {
+	    var videoId = arguments.length <= 0 || arguments[0] === undefined ? 'video00000' : arguments[0];
+	    var src = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
+	    var sources = arguments.length <= 2 || arguments[2] === undefined ? [] : arguments[2];
+	    var width = arguments.length <= 3 || arguments[3] === undefined ? window.innerWidth : arguments[3];
+	    var height = arguments.length <= 4 || arguments[4] === undefined ? 0 : arguments[4];
+	    var poster = arguments.length <= 5 || arguments[5] === undefined ? '' : arguments[5];
+
+
+	    var self = this;
+	    var isIOS = UA.isIOS;
+	    var source = self.pureSources(sources);
+	    var videoWH = self.pureVideoWH(width, height);
+	    var boxWH = self.pureBoxWH(width, height);
+	    var ctrls = self.pureCtrls(isIOS);
+	    var playbtn = self.purePlaybtn();
+
+	    poster = self.purePoster(poster);
+
+	    return '<qhvdiv class="qhv-v-box" ' + boxWH + '>\n                <video id="' + videoId + '" src="' + src + '" ' + poster + ' ' + videoWH + '>' + source + '您的浏览器不支持video标签</video>\n                <qhvdiv class="qhv-overlay">\n                    ' + ctrls + '\n                    ' + playbtn + '\n                </qhvdiv>\n            </qhvdiv>';
+	};
+
+	var getVideoUI = new GetVideoUI();
+
+	module.exports = getVideoUI;
 
 /***/ }
 /******/ ]);

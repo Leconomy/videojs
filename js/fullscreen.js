@@ -3,7 +3,8 @@ let requestFullscreenArr = ['requestFullscreen', 'webkitEnterFullscreen', 'webki
 let exitFullscreenArr = ['exitFullscreen', 'webkitExitFullscreen', 'mozCancelFullScreen', 'msExitFullscreen', 'oExitFullscreen'];
 let fullscreenchangeArr = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'msfullscreenchange', 'ofullscreenchange'];
 let fullscreenElementArr = ['fullscreenElement', 'webkitFullscreenElement', 'mozFullscreenElement', 'msFullscreenElement', 'ofullscreenchange'];
-let Fullscreen = function(bindElem, event, selector, fullscreenElem, callback) {
+let Fullscreen = function(bindElem, event, selector, fullscreenElem, callback = function() {}) {
+
     // 点击让wrapper元素全屏而不是让video元素全屏
     // 从而解决video全屏时native controls仍显示以及自定义控制条不显示的问题的
     // http://stackoverflow.com/questions/7130397/how-do-i-make-a-div-full-screen

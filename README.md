@@ -20,9 +20,11 @@
 	* 添加css样式 [参考文章](https://css-tricks.com/custom-controls-in-html5-video-full-screen/)
 
 	```javascript
-	video::-webkit-media-controls-enclosure, video::-webkit-media-controls {
+	video::-webkit-media-controls-enclosure, video::-webkit-media-controls, video::-webkit-media-controls-start-playback-button {
 	    display: none !important;
 	}
+	// video::-webkit-media-controls-start-playback-button 不加此项在ios9.3.2上隐藏不了播放按钮
+	// video::-webkit-media-controls-enclosure, video::-webkit-media-controls 在ios9.3.1之前版本
 	```
 
 3. 360浏览器全屏时中间默认显示一个播放暂停按钮
@@ -94,6 +96,10 @@
 	> This volume adjustment can be useful, because it allows the user to mute a game, for example, while still listening to music on the computer.
 
 	> On iOS devices, the audio level is always under the user’s physical control. The volume property is not settable in JavaScript. Reading the volume property always returns 1.
-13. 在ios里，如果设备设置成静音，搜索app里没有声音,打开其他网站的视频同样没有声音,调节声音大小也无效，但是safari却有声音。
+13. 在ios里，如果设备设置成静音，搜索app里没有声音,打开其他网站的视频同样没有声音,调节声音大小也无效，但是safari却有声音.
+14. 酷派大神F2手机里，播放时调小声音，点击暂停再点击播放，声音会变大而且设置为50%，修改的是设备声音。这应该是手机做了特殊处理.
+15. 酷派大神F2手机，搜索app不支持元素全屏，只支持video自身的全屏.
+16. iphone 5s ios9.1，自定义播放暂停按钮如果采用touchstart事件，调不起video的播放，需要改成click事件.
+	分析是：ios上初始是不加载资源的，只要点击播放的时候才去加载资源.
 
 
