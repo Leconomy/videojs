@@ -13,7 +13,7 @@ module.exports = {
   module: {
     loaders: [
       { test: /\.css$/, loader: 'style-loader!css-loader'},
-      {test:/\.(png|jpg)$/,loader:'url?limit=40000'},
+      {test:/\.(png|jpg|gifgir)$/,loader:'url?limit=40000'},
       {test: /\.js?$/,loader: 'babel', exclude: /node_modules/,  query: {compact: false,presets: ['es2015']}}
     ]
   }

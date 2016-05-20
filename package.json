@@ -21,6 +21,8 @@
   "homepage": "https://github.com/Leconomy/customVideo#readme",
   "devDependencies": {
     "babel-loader": "^6.2.4",
-    "babel-preset-es2015": "^6.6.0"
+    "babel-preset-es2015": "^6.6.0",
+    "file-loader": "^0.8.5",
+    "nodeppt": "^1.4.2"
   }
 }
