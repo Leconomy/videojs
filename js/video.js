@@ -444,7 +444,7 @@ Video.prototype.on = function() {
     const video = self.video;
 
     // 点击播放暂停按钮
-    // 不能用touchstart事件,ios9.1下点击播放无反映。分析是ios再不点击播放的情况下是不加载资源的
+    // 不能用touchstart事件,ios9.1下点击播放无反映。
     self.wrapper.on('click', '.qhv-playpausebtn', function(ev) {
         video.play();
     });

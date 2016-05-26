@@ -28,7 +28,7 @@ qhvdiv {
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 1000;
+    z-index: 2147483647;
 }
 
 .qhv-v-box .qhv-ctrls-box {

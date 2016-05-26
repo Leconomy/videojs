@@ -102,4 +102,6 @@
 16. iphone 5s ios9.1，自定义播放暂停按钮如果采用touchstart事件，调不起video的播放，需要改成click事件.
 	分析是：ios上初始是不加载资源的，只要点击播放的时候才去加载资源.
 
+17. coolpad大神F2 Android4.4手机会给video标签设置style="z-index:2147483647!important"
+
 
