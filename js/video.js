@@ -22,7 +22,8 @@ function Video(wrapper, options) {
         autoPlay: false,
         width: window.innerWidth,
         height: 0,
-        poster: ''
+        poster: '',
+        duration: 0
     }, options);
 
     self.video = null;
@@ -40,7 +41,6 @@ Video.prototype.init = function() {
 
     self.renderVideo();
 };
-
 
 
 Video.prototype.handleWH = function(width, height) {
@@ -186,10 +186,11 @@ Video.prototype.addErrorListener = function() {
 Video.prototype.addAndroidLoadedDataListener = function() {
     const self = this;
     const video = self.video;
+    const duration = self.options.duration;
     video.addEventListener('loadedmetadata', function() {
 
-        self.setDuration(formatTime.format(self.video.duration));
-        self.updatePlayTime(self.video.duration);
+        self.setDuration(formatTime.format(duration || self.video.duration));
+        self.updatePlayTime(duration || self.video.duration);
         self.changeStatus();
         self.addAndroidListener();
         
@@ -541,7 +542,6 @@ Video.prototype.changeStatus = function() {
                     lastVideoTime = video.currentTime;
                     if (self.isEnded) {
                         self.ended();
-                        return;
                     }
                     self.play();
                 } else {

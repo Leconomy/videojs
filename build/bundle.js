@@ -67,7 +67,8 @@
 	        autoPlay: false,
 	        width: window.innerWidth,
 	        height: 0,
-	        poster: ''
+	        poster: '',
+	        duration: 0
 	    }, options);
 
 	    self.video = null;
@@ -226,10 +227,11 @@
 	Video.prototype.addAndroidLoadedDataListener = function () {
 	    var self = this;
 	    var video = self.video;
+	    var duration = self.options.duration;
 	    video.addEventListener('loadedmetadata', function () {
 
-	        self.setDuration(formatTime.format(self.video.duration));
-	        self.updatePlayTime(self.video.duration);
+	        self.setDuration(formatTime.format(duration || self.video.duration));
+	        self.updatePlayTime(duration || self.video.duration);
 	        self.changeStatus();
 	        self.addAndroidListener();
 
@@ -548,7 +550,6 @@
 	                    lastVideoTime = video.currentTime;
 	                    if (self.isEnded) {
 	                        self.ended();
-	                        return;
 	                    }
 	                    self.play();
 	                } else {

@@ -104,4 +104,6 @@
 
 17. coolpad大神F2 Android4.4手机会给video标签设置style="z-index:2147483647!important"
 
+18. Android 4.1 ，三星，360搜索APP里，获取video.duration值是1
+
 
