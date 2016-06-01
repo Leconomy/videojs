@@ -597,10 +597,15 @@
 	            $screen.removeClass('qhv-fullscreen').addClass('qhv-exit-fullscreen').html('退出');
 	            return;
 	        }
-	        $overlay.add($ctrls).css('zIndex', '');
+	        $overlay.hide().show().add($ctrls).css('zIndex', '');
 	        $overlay.removeClass('qhv-full-screen');
 	        $screen.addClass('qhv-fullscreen').removeClass('qhv-exit-fullscreen').html('全屏');
 	        self.buffer();
+	        if (self.isEnded) {
+	            var $progressbar = self.wrapper.find('.qhv-progressbar .qhv-sliderbar');
+	            var $sliderbar = $progressbar.find('.qhv-slider');
+	            self.updateSliderbar($progressbar, $progressbar.width() - $sliderbar.width());
+	        }
 	    }
 
 	    if (isAPP) {
